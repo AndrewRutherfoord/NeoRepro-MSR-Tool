@@ -7,12 +7,17 @@ neo:
 
 repositories:
   defaults: 
-    start_date: #
-    end_date: #
+    start_date: 1 April, 2022 00:00
+    end_date: 30 June, 2022 00:00
     index_code: False
     index_developer_email: True
   projects:
-    - repo: repos/pydriller
-      project_id: 'pydriller'
-    - repo: repos/vee-validate
-      project_id: 'vee-validate'
+    - project_id: 'pydriller'
+      url: https://github.com/ishepard/pydriller.git
+      repo: repos/pydriller
+      start_date: 1 April, 2022 00:00
+      end_date: 30 April, 2022 00:00
+    - project_id: 'vee-validate'
+      repo: repos/vee-validate
+      start_date: 1 April, 2022 00:00
+      end_date: 20 April, 2022 00:00

@@ -6,6 +6,8 @@ from neo4j import GraphDatabase
 from graphrepo.config import Config
 from graphrepo.drillers.driller import Driller
 
+from driller.cloner import clone_repository
+
 
 URI = "neo4j://localhost:7687"
 AUTH = ("neo4j", "neo4j123")
@@ -26,14 +28,15 @@ class Neo4jConfig:
 class ProjectDefaults:
     index_code: bool = None
     index_developer_email: bool = None
-    start_date: str = datetime.strptime("1 February, 2021 00:00", '%d %B, %Y %H:%M')
-    end_date: str = datetime.strptime("30 March, 2021 00:00", '%d %B, %Y %H:%M')
+    start_date: str = None
+    end_date: str = None
 
 
 @dataclass(kw_only=True)
 class ProjectConfig(ProjectDefaults):
     repo: str
     project_id: str
+    url: str  =None
     
 def apply_defaults(project : ProjectConfig, defaults : ProjectDefaults):
     for field in fields(ProjectDefaults):
@@ -61,13 +64,13 @@ class ConfigDriller(Driller):
 
 # Mines a specified repository based on the project configurations
 def execute_repository_drill_job(neo: Neo4jConfig, project: ProjectConfig):
-    logging.info(project)
+    logging.info(f"Drilling {project.project_id} between {project.start_date} and {project.end_date}")
     driller = ConfigDriller(neo, project)
     try:
         driller.init_db()
     except Exception as exc:
         print("DB already initialized")
-    driller.drill_batch()
+    driller.drill_batch() 
     driller.merge_all()
 
 
@@ -77,6 +80,13 @@ def set_defaults(project : ProjectConfig, defaults: ProjectDefaults):
 def drill_repositories(
     projects: list[ProjectConfig], neo: Neo4jConfig, project_defaults: ProjectDefaults
 ):
+    logging.debug(project_defaults)
+
+    project_applied_defaults = []
     for project in projects:
         p = apply_defaults(project, defaults=project_defaults)
-        execute_repository_drill_job(neo, p)
+        clone_repository(repository_url=project.url, repository_location=project.repo)
+        project_applied_defaults.append(p)
+    
+    for project in project_applied_defaults:
+        execute_repository_drill_job(neo, project)
