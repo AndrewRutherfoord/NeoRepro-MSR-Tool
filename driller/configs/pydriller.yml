@@ -1,0 +1,14 @@
+neo:
+  db_url: localhost
+  port: 7687
+  db_user: neo4j
+  db_pwd: neo4j123
+  batch_size: 50
+
+project:
+  repo: repos/pydriller/
+  start_date: "1 February, 2018 00:00"
+  end_date: "30 March, 2018 00:00"
+  project_id: 'pydriller'
+  index_code: False
+  index_developer_email: True

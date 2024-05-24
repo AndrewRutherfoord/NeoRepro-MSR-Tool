@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "driller"
+version = "0.1.0"
+description = ""
+authors = ["Andrew Rutherfoord <andrew.rutherfoord@live.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+# Added by `poetry add git+ssh://git@github.com:AndrewRutherfoord/GraphRepo.git#develop`
+graphrepo = { git = "git@github.com:AndrewRutherfoord/GraphRepo.git", rev = "develop" }
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+driller = "driller.main:main"

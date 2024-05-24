@@ -1,0 +1,18 @@
+neo:
+  db_url: localhost
+  port: 7687
+  db_user: neo4j
+  db_pwd: neo4j123
+  batch_size: 50
+
+repositories:
+  defaults: 
+    start_date: #
+    end_date: #
+    index_code: False
+    index_developer_email: True
+  projects:
+    - repo: repos/pydriller
+      project_id: 'pydriller'
+    - repo: repos/vee-validate
+      project_id: 'vee-validate'
