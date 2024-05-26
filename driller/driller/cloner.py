@@ -1,7 +1,8 @@
+import logging
 import os
 from git import GitCommandError, InvalidGitRepositoryError, Repo
 
-import logging
+logger = logging.getLogger(__name__)
 
 def clone_repository(repository_url, repository_location):
     """Clones a Git Repository to a specified local directory.
@@ -19,12 +20,12 @@ def clone_repository(repository_url, repository_location):
         try:
             repo = Repo(repository_location)
             if repo.remotes.origin.url == repository_url:
-                logging.info(f"Repo `{repository_url}` already cloned.")
+                logger.info(f"Repo `{repository_url}` already cloned.")
                 return # Repository already cloned
             else:
                 return # Another repo at location
         except InvalidGitRepositoryError as e:
-            logging.error(f"Directory `{repository_location}` already exists but isn't a Git Repo.")
+            logger.error(f"Directory `{repository_location}` already exists but isn't a Git Repo.")
             raise e  # Directory exists but not a Git repo.
         
 

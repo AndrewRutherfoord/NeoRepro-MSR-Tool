@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime
 from dataclasses import asdict, dataclass, fields
@@ -7,13 +8,21 @@ from graphrepo.config import Config
 from graphrepo.drillers.driller import Driller
 
 from driller.cloner import clone_repository
+from driller.settings import DATE_FORMAT
 
 
 URI = "neo4j://localhost:7687"
 AUTH = ("neo4j", "neo4j123")
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            # Convert datetime object to a string
+            return obj.strftime(DATE_FORMAT)
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, obj)
 
 @dataclass
 class Neo4jConfig:
@@ -22,6 +31,13 @@ class Neo4jConfig:
     db_pwd: str
     port: int = 7687
     batch_size: int = 50
+
+    def __dict__(self):
+        return asdict(self)
+
+    @staticmethod
+    def from_dict(data: dict):
+        return Neo4jConfig(**data)
 
 
 @dataclass(kw_only=True)
@@ -36,9 +52,46 @@ class ProjectDefaults:
 class ProjectConfig(ProjectDefaults):
     repo: str
     project_id: str
-    url: str  =None
+    url: str = None
+
+    def __dict__(self):
+        return asdict(self)
+
+    @staticmethod
+    def from_dict(data: dict):
+        return ProjectConfig(**data)
     
-def apply_defaults(project : ProjectConfig, defaults : ProjectDefaults):
+@dataclass
+class DrillConfig:
+    neo: Neo4jConfig
+    project: ProjectConfig
+
+    def __dict__(self):
+        return {
+            "neo": self.neo.__dict__(),
+            "project": self.project.__dict__(),
+        }
+
+    def to_json(self):
+        return json.dumps(self.__dict__(), cls=DateTimeEncoder)
+    
+    @staticmethod
+    def from_json(data: str) -> "DrillConfig":
+        data = json.loads(data)
+        
+        project_data = data["project"]
+        project_data["start_date"] = datetime.strptime(project_data["start_date"], DATE_FORMAT)
+        project_data["end_date"] = datetime.strptime(project_data["end_date"], DATE_FORMAT)
+
+        neo_data = data["neo"]
+        
+        return DrillConfig(
+            project=ProjectConfig(**project_data),
+            neo=Neo4jConfig(**neo_data),
+        )
+
+
+def apply_defaults(project: ProjectConfig, defaults: ProjectDefaults):
     for field in fields(ProjectDefaults):
         if getattr(project, field.name) is None:
             setattr(project, field.name, getattr(defaults, field.name))
@@ -59,35 +112,40 @@ class ConfigDriller(Driller):
             self.config.configure(**neo, **project)
             self._connect()
         except Exception as exc:
-            logging.exception(exc)
+            logger.exception(exc)
 
 
 # Mines a specified repository based on the project configurations
 def execute_repository_drill_job(neo: Neo4jConfig, project: ProjectConfig):
-    logging.info(f"Drilling {project.project_id} between {project.start_date} and {project.end_date}")
+    logger.info(
+        f"Drilling {project.project_id} between {project.start_date} and {project.end_date}"
+    )
     driller = ConfigDriller(neo, project)
     try:
         driller.init_db()
     except Exception as exc:
         print("DB already initialized")
-    driller.drill_batch() 
+    driller.drill_batch()
     driller.merge_all()
 
 
-def set_defaults(project : ProjectConfig, defaults: ProjectDefaults):
+def set_defaults(project: ProjectConfig, defaults: ProjectDefaults):
     pass
+
 
 def drill_repositories(
     projects: list[ProjectConfig], neo: Neo4jConfig, project_defaults: ProjectDefaults
 ):
-    logging.debug(project_defaults)
+    logger.debug(project_defaults)
 
     project_applied_defaults = []
     for project in projects:
         p = apply_defaults(project, defaults=project_defaults)
         if project.url:
-            clone_repository(repository_url=project.url, repository_location=project.repo)
+            clone_repository(
+                repository_url=project.url, repository_location=project.repo
+            )
         project_applied_defaults.append(p)
-    
+
     for project in project_applied_defaults:
         execute_repository_drill_job(neo, project)

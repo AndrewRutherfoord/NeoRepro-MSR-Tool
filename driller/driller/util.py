@@ -3,11 +3,13 @@ from driller.config_driller import (
     Neo4jConfig,
     ProjectConfig,
     ProjectDefaults,
-    drill_repositories,
+    # drill_repositories,
 )
 import logging
 from datetime import datetime, timedelta
-logger = logging
+
+from driller.settings import DATE_FORMAT
+logger = logging.getLogger(__name__)
 
 def load_yaml(path):
     with open(path, "r") as ymlfile:
@@ -29,7 +31,7 @@ def handle_date(data: dict, date_key: str, boundary: datetime = None) -> datetim
     """
     if date_key in data:
         return (
-            datetime.strptime(data[date_key], "%d %B, %Y %H:%M")
+            datetime.strptime(data[date_key], DATE_FORMAT)
             if data[date_key]
             else boundary
         )
