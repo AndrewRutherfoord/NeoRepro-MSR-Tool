@@ -115,37 +115,19 @@ class ConfigDriller(Driller):
             logger.exception(exc)
 
 
-# Mines a specified repository based on the project configurations
-def execute_repository_drill_job(neo: Neo4jConfig, project: ProjectConfig):
-    logger.info(
-        f"Drilling {project.project_id} between {project.start_date} and {project.end_date}"
-    )
-    driller = ConfigDriller(neo, project)
-    try:
-        driller.init_db()
-    except Exception as exc:
-        print("DB already initialized")
-    driller.drill_batch()
-    driller.merge_all()
+# def drill_repositories(
+#     projects: list[ProjectConfig], neo: Neo4jConfig, project_defaults: ProjectDefaults
+# ):
+#     logger.debug(project_defaults)
 
+#     project_applied_defaults = []
+#     for project in projects:
+#         p = apply_defaults(project, defaults=project_defaults)
+#         if project.url:
+#             clone_repository(
+#                 repository_url=project.url, repository_location=project.repo
+#             )
+#         project_applied_defaults.append(p)
 
-def set_defaults(project: ProjectConfig, defaults: ProjectDefaults):
-    pass
-
-
-def drill_repositories(
-    projects: list[ProjectConfig], neo: Neo4jConfig, project_defaults: ProjectDefaults
-):
-    logger.debug(project_defaults)
-
-    project_applied_defaults = []
-    for project in projects:
-        p = apply_defaults(project, defaults=project_defaults)
-        if project.url:
-            clone_repository(
-                repository_url=project.url, repository_location=project.repo
-            )
-        project_applied_defaults.append(p)
-
-    for project in project_applied_defaults:
-        execute_repository_drill_job(neo, project)
+#     for project in project_applied_defaults:
+#         execute_repository_drill_job(neo, project)
