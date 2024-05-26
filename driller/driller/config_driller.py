@@ -85,7 +85,8 @@ def drill_repositories(
     project_applied_defaults = []
     for project in projects:
         p = apply_defaults(project, defaults=project_defaults)
-        clone_repository(repository_url=project.url, repository_location=project.repo)
+        if project.url:
+            clone_repository(repository_url=project.url, repository_location=project.repo)
         project_applied_defaults.append(p)
     
     for project in project_applied_defaults:
