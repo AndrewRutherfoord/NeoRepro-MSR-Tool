@@ -8,7 +8,7 @@ from graphrepo.config import Config
 from graphrepo.drillers.driller import Driller
 
 from driller.cloner import clone_repository
-from driller.settings import DATE_FORMAT
+from driller.settings import DATE_FORMAT, REPO_CLONE_LOCATION
 
 
 URI = "neo4j://localhost:7687"
@@ -53,6 +53,12 @@ class ProjectConfig(ProjectDefaults):
     repo: str
     project_id: str
     url: str = None
+
+    def __init__(self, repo=None, project_id=None, url=None, **kwargs):
+        super().__init__(**kwargs)
+        self.repo=REPO_CLONE_LOCATION+repo
+        self.project_id = project_id
+        self.url = url
 
     def __dict__(self):
         return asdict(self)

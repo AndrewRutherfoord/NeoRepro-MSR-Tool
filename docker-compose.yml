@@ -14,3 +14,35 @@ services:
       - ./neo4j_db/logs:/logs
       - ./neo4j_db/import:/var/lib/neo4j/import
       - ./neo4j_db/plugins:/plugins
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    hostname: 'rabbitmq'
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+     - ./rabbitmq/data/:/var/lib/rabbitmq/mnesia/
+     - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    healthcheck:
+      # Pings rabbitmq service to check if started
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  driller-worker:
+    build: ./driller
+    network_mode: host
+    volumes:
+     - ./driller/repos:/driller/repos
+    deploy:
+      replicas: 2
+    # container_name: driller_worker
+    depends_on:
+      rabbitmq:
+        # Wait for rabbitmq to be healthy
+        condition: service_healthy
+      neo4j:
+        condition: service_started
+    env_file:
+      - .env

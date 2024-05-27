@@ -7,13 +7,18 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-# Added by `poetry add git+ssh://git@github.com:AndrewRutherfoord/GraphRepo.git#develop`
-graphrepo = { git = "git@github.com:AndrewRutherfoord/GraphRepo.git", rev = "develop" }
 pika = "^1.3.2"
+graphrepo = { version = "^0.4.0", source = "pypi-priv" }
+
+[[tool.poetry.source]]
+name = "pypi-priv"
+url = "http://10.10.1.4:8083/"
+priority = "explicit"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-driller = "driller.main:main"
+driller-worker = "driller.main:main"
+test-client = "driller.test_client:main"
