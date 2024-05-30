@@ -7,6 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
+common = { path = "../common"}
 pika = "^1.3.2"
 graphrepo = { version = "^0.4.0", source = "pypi-priv" }
 

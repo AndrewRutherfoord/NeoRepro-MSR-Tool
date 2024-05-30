@@ -9,8 +9,11 @@ import pika
 from driller.cloner import clone_repository
 from driller.config_driller import (
     ConfigDriller,
-    DrillConfig,
 )
+
+from common.driller_config import DrillConfig
+
+
 from driller.settings import (
     LOG_FORMAT,
     PIKA_HOST,
@@ -72,6 +75,9 @@ class QueueDrillerWorker(QueueWorker):
         logger.info(
             f"Drilling {project.project_id} between {project.start_date} and {project.end_date}"
         )
+        logger.debug(
+            f"{ project.repo }"
+        )
         driller = ConfigDriller(conf.neo, project)
 
         try:
@@ -84,7 +90,7 @@ class QueueDrillerWorker(QueueWorker):
 
     def on_request(self, ch, method, props, body):
         try:
-            drill_job = DrillConfig.from_json(body)
+            drill_job = DrillConfig.from_json(body, repo_base_location="/app/driller/repos/")
 
             logger.info(f"Received Drill Job: {drill_job.project.project_id}")
 

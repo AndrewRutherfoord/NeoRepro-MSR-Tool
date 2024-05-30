@@ -7,6 +7,7 @@ PIKA_HOST = os.environ.get("PIKA_HOST")
 PIKA_PORT = os.environ.get("PIKA_PORT")
 PIKA_QUEUE = os.environ.get("PIKA_QUEUE")
 
+LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 REPO_CLONE_LOCATION = ""
@@ -18,11 +19,11 @@ def config_logging():
 
     logger = logging.getLogger(__name__)
     logger.propagate = False
-    logger.setLevel(logging.INFO)
+    logger.setLevel(LOG_LEVEL)
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
     pika_logger = logging.getLogger("pika")
     pika_logger.setLevel(logging.WARNING)
 
-    return logger
+    return logger   

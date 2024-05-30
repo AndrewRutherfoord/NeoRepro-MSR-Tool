@@ -4,10 +4,10 @@ import time
 import pika
 import uuid
 
-from driller.config_driller import DrillConfig, apply_defaults
+# from driller.config_driller import DrillConfig, apply_defaults
 from driller.settings import config_logging
 from driller.util import load_yaml, parse_config
-
+from common.driller_config import DrillConfig, apply_defaults
 logger = config_logging()
 
 class DrillerClient(object):
@@ -63,10 +63,13 @@ def get_drill_configs(file) -> list[DrillConfig]:
     
     return configs
 
+def main():
+    driller = DrillerClient()
+    configs = get_drill_configs("driller/configs/test.yaml")
 
-driller = DrillerClient()
-configs = get_drill_configs("driller/configs/test.yaml")
+    for conf in configs:
+        response = driller.call(conf)
+        logger.info(response)
 
-for conf in configs:
-    response = driller.call(conf)
-    logger.info(response)
+if __name__ == "__main__":
+    main()

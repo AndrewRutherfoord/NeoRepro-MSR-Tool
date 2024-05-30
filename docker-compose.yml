@@ -31,10 +31,12 @@ services:
       timeout: 5s
       retries: 5
   driller-worker:
-    build: ./driller
+    build: 
+      context: ./
+      dockerfile: ./driller/Dockerfile
     network_mode: host
     volumes:
-     - ./driller/repos:/driller/repos
+     - ./driller/repos:/app/driller/repos
     deploy:
       replicas: 2
     # container_name: driller_worker
