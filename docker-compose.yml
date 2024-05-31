@@ -48,3 +48,20 @@ services:
         condition: service_started
     env_file:
       - .env
+  backend:
+    container_name: backend
+    ports:
+      - 8000:8000
+    build: 
+      context: ./
+      dockerfile: ./backend/Dockerfile
+    network_mode: host
+    volumes:
+     - ./backend/:/app/backend/
+    depends_on:
+      neo4j:
+        condition: service_started
+      driller-worker:
+        condition: service_started
+    env_file:
+      - .env

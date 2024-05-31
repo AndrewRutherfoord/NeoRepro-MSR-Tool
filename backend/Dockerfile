@@ -12,18 +12,16 @@ POETRY_VIRTUALENVS_IN_PROJECT=1 \
     POETRY_VIRTUALENVS_CREATE=0 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
     
-WORKDIR /app/driller
+WORKDIR /app/backend
 
-RUN git config --global --add safe.directory '*'
-
-COPY ./driller/poetry.lock ./driller/pyproject.toml ./
+COPY ./backend/poetry.lock ./backend/pyproject.toml ./
 
 COPY ./common /app/common
 
 RUN poetry install && rm -rf $POETRY_CACHE_DIR
 
 # Adding common to satisfy dependency
-COPY ./driller/driller ./driller
+COPY ./backend/backend ./backend
 
-CMD ["poetry", "run", "python3","-m","driller.main"]
+CMD ["fastapi","dev", "./backend/main.py"]
 
