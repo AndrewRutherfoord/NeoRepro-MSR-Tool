@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta
 
 from driller.settings import DATE_FORMAT
-from common.driller_config import Neo4jConfig, ProjectConfig, ProjectDefaults
+from .driller_config import Neo4jConfig, ProjectConfig, ProjectDefaults
 
 logger = logging.getLogger(__name__)
 

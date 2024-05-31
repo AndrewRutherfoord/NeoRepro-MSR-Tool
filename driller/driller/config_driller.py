@@ -4,7 +4,7 @@ from dataclasses import asdict
 from graphrepo.config import Config
 from graphrepo.drillers.driller import Driller
 
-from common.driller_config import Neo4jConfig, ProjectConfig
+from .driller_config import Neo4jConfig, ProjectConfig
 
 URI = "neo4j://localhost:7687"
 AUTH = ("neo4j", "neo4j123")

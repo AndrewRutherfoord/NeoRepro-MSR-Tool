@@ -7,7 +7,7 @@ import uuid
 # from driller.config_driller import DrillConfig, apply_defaults
 from driller.settings import config_logging
 from driller.util import load_yaml, parse_config
-from common.driller_config import DrillConfig, apply_defaults
+from .driller_config import DrillConfig, apply_defaults
 logger = config_logging()
 
 class DrillerClient(object):

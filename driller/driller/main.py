@@ -11,7 +11,7 @@ from driller.config_driller import (
     ConfigDriller,
 )
 
-from common.driller_config import DrillConfig
+from .driller_config import DrillConfig
 
 
 from driller.settings import (

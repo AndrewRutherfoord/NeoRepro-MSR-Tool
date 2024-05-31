@@ -12,6 +12,10 @@ LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 REPO_CLONE_LOCATION = ""
 
+DEFAULT_CONFIGS = {
+    "DRILLER_CLASS": 
+}
+
 def config_logging():
 
     handler = logging.StreamHandler()

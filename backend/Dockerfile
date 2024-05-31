@@ -16,11 +16,8 @@ WORKDIR /app/backend
 
 COPY ./backend/poetry.lock ./backend/pyproject.toml ./
 
-COPY ./common /app/common
-
 RUN poetry install && rm -rf $POETRY_CACHE_DIR
 
-# Adding common to satisfy dependency
 COPY ./backend/backend ./backend
 
 CMD ["fastapi","dev", "./backend/main.py"]

@@ -2,8 +2,7 @@ import json
 from datetime import datetime
 from dataclasses import asdict, dataclass, fields
 
-from driller.settings import DATE_FORMAT, REPO_CLONE_LOCATION
-
+from settings import DATE_FORMAT
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -57,7 +56,7 @@ class ProjectConfig(ProjectDefaults):
 
     @staticmethod
     def from_dict(data: dict, base_location=""):
-        return ProjectConfig(repo=base_location + data.get("repo", ""), **data)
+        return ProjectConfig(repo=base_location + data.pop("repo", ""), **data)
 
 
 @dataclass
