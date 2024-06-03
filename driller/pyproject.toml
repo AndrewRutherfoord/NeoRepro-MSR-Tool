@@ -8,12 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 pika = "^1.3.2"
-graphrepo = { version = "^0.4.0", source = "pypi-priv" }
-
-[[tool.poetry.source]]
-name = "pypi-priv"
-url = "http://10.10.1.4:8083/"
-priority = "explicit"
+GraphRepo = {path = "../GraphRepo", develop = true}
 
 [build-system]
 requires = ["poetry-core"]

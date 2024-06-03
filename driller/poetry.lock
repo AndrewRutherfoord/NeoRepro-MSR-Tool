@@ -58,23 +58,20 @@ name = "graphrepo"
 version = "0.4.0"
 description = "A tool that maps a Git repo to Neo4j and Helps Mining the repo in the database. Recreated with updated packages."
 optional = false
-python-versions = ">=3.10,<4.0"
-files = [
-    {file = "graphrepo-0.4.0-py3-none-any.whl", hash = "sha256:d9790754f257a6cc0c92a48f3890e68a42e239d9bfc9ce0a4082e56002e19d8d"},
-    {file = "graphrepo-0.4.0.tar.gz", hash = "sha256:7018822f3c219a795df02cc7904fc0e0c2b45190d7fd346c80875351c96dfe9a"},
-]
+python-versions = "^3.10"
+files = []
+develop = true
 
 [package.dependencies]
 diskcache = "4.1.0"
 neo4j = "5.19.0"
 pydriller = "1.15.1"
-pyyaml = ">=6.0.1,<7.0.0"
+pyyaml = "^6.0.1"
 stomp-py = "7.0.0"
 
 [package.source]
-type = "legacy"
-url = "http://10.10.1.4:8083"
-reference = "pypi-priv"
+type = "directory"
+url = "../GraphRepo"
 
 [[package]]
 name = "lizard"
@@ -236,4 +233,4 @@ docopt = ">=0.6.2,<0.7.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "4a88f9377c5faf8ddd34434de7fdcf0eda2bd01c524088321db83a50dd508fcf"
+content-hash = "ded109147f8a8aa6e200489182aa995e607e2c19082dc1bc090cbb1d711f9695"

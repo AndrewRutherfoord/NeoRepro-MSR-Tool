@@ -18,9 +18,10 @@ RUN git config --global --add safe.directory '*'
 
 COPY ./driller/poetry.lock ./driller/pyproject.toml ./
 
+COPY ./GraphRepo /app/GraphRepo
+
 RUN poetry install && rm -rf $POETRY_CACHE_DIR
 
-# Adding common to satisfy dependency
 COPY ./driller/driller ./driller
 
 CMD ["poetry", "run", "python3","-m","driller.main"]
