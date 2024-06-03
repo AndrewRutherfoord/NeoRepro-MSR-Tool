@@ -66,7 +66,7 @@ class DrillConfig:
 
     def __dict__(self):
         return {
-            "neo": self.neo.__dict__(),
+            "neo": self.neo.__dict__() if self.neo else None,
             "project": self.project.__dict__(),
         }
 
@@ -85,11 +85,13 @@ class DrillConfig:
             project_data["end_date"], DATE_FORMAT
         )
 
-        neo_data = data["neo"]
+        neo = None
+        if data.get("neo", None) is not None:
+            neo = Neo4jConfig(**data["neo"])
 
         return DrillConfig(
             project=ProjectConfig(**project_data, base_location=repo_base_location),
-            neo=Neo4jConfig(**neo_data),
+            neo=neo,
         )
 
 

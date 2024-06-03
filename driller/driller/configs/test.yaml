@@ -15,7 +15,7 @@ repositories:
     - project_id: 'pydriller'
       url: https://github.com/ishepard/pydriller.git
       repo: pydriller
-      start_date: 1 April, 2019 00:00
+      start_date: 1 April, 2022 00:00
       end_date: 30 April, 2022 00:00
     - project_id: 'ChromeQueryParamAppender'
       repo: ChromeQueryParamAppender

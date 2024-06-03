@@ -43,6 +43,7 @@ class DrillerClient(object):
             self.response = body
 
     def call(self, task: DrillConfig):
+        task.neo = None
         self.response = None
         self.corr_id = str(uuid.uuid4())
         self.channel.basic_publish(

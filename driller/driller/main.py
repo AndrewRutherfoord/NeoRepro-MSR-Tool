@@ -1,23 +1,11 @@
 #!/usr/bin/env python3
 
-from dataclasses import asdict, dataclass
 import logging
 import signal
 import sys
-from abc import ABC, abstractmethod
 
-import pika
-
-from driller.cloner import clone_repository
-from driller.config_driller import (
-    ConfigDriller,
-)
 from driller.settings.default import LOG_FORMAT, LOG_LEVEL, CONFIGS
 from driller.util import get_class
-from driller.workers.queue_driller_worker import QueueDrillerWorker
-
-from .driller_config import DrillConfig
-
 
 from driller.settings.default import (
     PIKA_HOST,
