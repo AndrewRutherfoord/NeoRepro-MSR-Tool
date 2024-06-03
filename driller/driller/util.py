@@ -2,10 +2,23 @@ import yaml
 import logging
 from datetime import datetime, timedelta
 
-from driller.settings import DATE_FORMAT
-from .driller_config import Neo4jConfig, ProjectConfig, ProjectDefaults
+from driller.settings.default import DATE_FORMAT
+from driller.driller_config import Neo4jConfig, ProjectConfig, ProjectDefaults
 
 logger = logging.getLogger(__name__)
+
+import importlib
+
+def get_class(class_path):
+
+    # Split the path to get the module and class name
+    module_path, class_name = class_path.rsplit('.', 1)
+
+    # Import the module
+    module = importlib.import_module(module_path)
+
+    # Get the class
+    return getattr(module, class_name)
 
 def load_yaml(path):
     with open(path, "r") as ymlfile:

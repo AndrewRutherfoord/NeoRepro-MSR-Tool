@@ -1,14 +1,20 @@
 from dataclasses import asdict
 import json
+import logging
 import time
 import pika
 import uuid
 
 # from driller.config_driller import DrillConfig, apply_defaults
-from driller.settings import config_logging
+from driller.settings.default import LOG_FORMAT, LOG_LEVEL
 from driller.util import load_yaml, parse_config
 from .driller_config import DrillConfig, apply_defaults
-logger = config_logging()
+
+
+logging.basicConfig(format=LOG_FORMAT, level=LOG_LEVEL)
+logger = logging.getLogger(__name__)
+pika_logger = logging.getLogger("pika")
+pika_logger.setLevel(logging.WARNING)
 
 class DrillerClient(object):
     queue = "driller_queue"

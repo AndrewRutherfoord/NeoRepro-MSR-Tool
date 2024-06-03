@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from dataclasses import asdict, dataclass, fields
 
-from settings import DATE_FORMAT
+from .settings.default import DATE_FORMAT
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
