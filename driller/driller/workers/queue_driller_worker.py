@@ -6,7 +6,13 @@ from driller.cloner import clone_repository
 from driller.config_driller import (
     ConfigDriller,
 )
-from driller.settings.default import NEO4J_DEFAULT_BATCH_SIZE, NEO4J_HOST, NEO4J_PORT, NEO4J_USER, NEO4J_PASSWORD
+from driller.settings.default import (
+    NEO4J_DEFAULT_BATCH_SIZE,
+    NEO4J_HOST,
+    NEO4J_PORT,
+    NEO4J_USER,
+    NEO4J_PASSWORD,
+)
 from driller.util import get_class
 from ..driller_config import DrillConfig, Neo4jConfig
 from .queue_worker import QueueWorker
@@ -43,36 +49,34 @@ class QueueDrillerWorker(QueueWorker):
         driller.drill_batch()
         driller.merge_all()
 
-    def on_request(self, ch, method, props, body):
+    def get_env_neo(self):
+        return Neo4jConfig(
+            db_user=NEO4J_USER,
+            db_pwd=NEO4J_PASSWORD,
+            db_url=NEO4J_HOST,
+            port=NEO4J_PORT,
+            batch_size=int(NEO4J_DEFAULT_BATCH_SIZE),
+        )
+
+    def on_request(self, body):
         try:
             # Repo base location is where the cloned repos are stored or where they should be clone to.
             drill_job = DrillConfig.from_json(
                 body, repo_base_location="/app/driller/repos/"
             )
-            
+
             # If neo setup isn't set then set from environment variables.
             if drill_job.neo is None:
-                drill_job.neo = Neo4jConfig(
-                    db_user=NEO4J_USER,
-                    db_pwd=NEO4J_PASSWORD,
-                    db_url=NEO4J_HOST,
-                    port=NEO4J_PORT,
-                    batch_size=int(NEO4J_DEFAULT_BATCH_SIZE),
-                )
+                drill_job.neo = self.get_env_neo()
 
             logger.info(f"Received Drill Job: {drill_job.project.project_id}")
             logger.info(drill_job.neo.__dict__())
+            
             self.execute_drill_job(drill_job)
 
             logger.info(f"Drill Job Complete: {drill_job.project.project_id}")
 
             response = f"Drilling Complete for project {drill_job.project.project_id}."
-            ch.basic_publish(
-                exchange="",
-                routing_key=props.reply_to,
-                properties=pika.BasicProperties(correlation_id=props.correlation_id),
-                body=str(response),
-            )
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+            return response
         except Exception as e:
             logger.exception(e)

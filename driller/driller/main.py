@@ -25,7 +25,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-def main():
+async def main():
     logging.basicConfig(format=LOG_FORMAT, level=LOG_LEVEL)
 
     pika_logger = logging.getLogger("pika")
@@ -38,12 +38,12 @@ def main():
     driller_class = get_class(CONFIGS.get("DRILLER_CLASS"))
     worker_class = get_class(CONFIGS.get("WORKER_CLASS"))
 
-    worker = worker_class(host=PIKA_HOST, port=PIKA_PORT, queue=PIKA_QUEUE, driller_class=driller_class)
-    worker.connect()
-    worker.consume_jobs()
+    worker : QueueWorker = worker_class(host=PIKA_HOST, port=PIKA_PORT, queue=PIKA_QUEUE, driller_class=driller_class)
+    await worker.connect()
+    await worker.consume_jobs()
 
 def exec():
-    main()
+    asyncio.run(main())
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

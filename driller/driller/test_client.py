@@ -78,5 +78,8 @@ def main():
         response = driller.call(conf)
         logger.info(response)
 
+def exec():
+    main()
+
 if __name__ == "__main__":
     main()
