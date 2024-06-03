@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import asyncio
 import logging
 import signal
 import sys
@@ -12,6 +13,7 @@ from driller.settings.default import (
     PIKA_PORT,
     PIKA_QUEUE,
 )
+from driller.workers.queue_worker import QueueWorker
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +42,8 @@ def main():
     worker.connect()
     worker.consume_jobs()
 
+def exec():
+    main()
 
 if __name__ == "__main__":
     main()

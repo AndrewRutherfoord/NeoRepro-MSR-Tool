@@ -10,10 +10,11 @@ python = "^3.10"
 pika = "^1.3.2"
 GraphRepo = {path = "../GraphRepo", develop = true}
 
+aio-pika = "^9.4.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-driller-worker = "driller.main:main"
-test-client = "driller.test_client:main"
+driller-worker = "driller.main:exec"
+test-client = "driller.test_client:exec"

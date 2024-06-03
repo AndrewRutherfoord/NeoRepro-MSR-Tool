@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass, fields
 
 from .settings.default import DATE_FORMAT
 
+
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
@@ -26,7 +27,11 @@ class Neo4jConfig:
 
     @staticmethod
     def from_dict(data: dict):
-        return Neo4jConfig(**data)
+        return Neo4jConfig(
+            **data,
+            port=int(data.get("port")),
+            batch_size=int(data.get("batch_size")),
+        )
 
 
 @dataclass(kw_only=True)
@@ -43,7 +48,7 @@ class ProjectConfig(ProjectDefaults):
     project_id: str
     url: str = None
 
-    def __init__( 
+    def __init__(
         self, repo=None, project_id=None, url=None, base_location="", **kwargs
     ):
         super().__init__(**kwargs)
