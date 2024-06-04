@@ -12,7 +12,7 @@ import logging
 from pydantic import BaseModel
 
 from backend.jobs_queue import DrillerClient, RabbitMQManager
-
+from backend.routers import driller_router
 logger = logging.getLogger(__name__)
 
 user = os.environ.get("RABBITMQ_DEFAULT_USER", "guest")
@@ -33,8 +33,16 @@ async def teardown_jobs_queue():
     driller_client.close()
     driller_client = None
 
+async def get_client(request: Request) -> DrillerClient:
+    global driller_client
+    if driller_client is None or driller_client.connection.is_closed:
+        driller_client = await DrillerClient().connect()
+        logger.warning("Setting client")
+    request.state.driller_client = driller_client
+    return driller_client
 
-app = FastAPI()
+app = FastAPI(dependencies=[Depends(get_client)])
+app.include_router(driller_router.router)
 
 origins = [
     "http://localhost.tiangolo.com",
@@ -68,59 +76,3 @@ async def lifespan(app: FastAPI):
 async def test():
     return Response("hello", status_code=200)
 
-class ProjectConfigDefaults(BaseModel):
-    start_date : str
-    end_date : str
-    index_code : bool
-    index_developer_email : bool
-    
-class ProjectConfig(BaseModel):
-    project_id : str
-    repo : str
-    url : str = None
-
-    start_date : str = None
-    end_date : str = None
-    index_code : bool = False
-    index_developer_email : bool = False
-
-class RepositoriesConfig(BaseModel):
-    defaults: ProjectConfigDefaults
-    projects: list[ProjectConfig]
-
-class NeoConfig(BaseModel):
-    db_url : str
-    port : int
-    db_user : str
-    db_pwd : str
-    batch_size : int
-
-class JobConfigs(BaseModel):
-    neo: NeoConfig = None  # optional. Can be filled from env vars in worker.
-    repositories: RepositoriesConfig
-
-
-async def get_client() -> DrillerClient:
-    global driller_client
-    if driller_client is None or driller_client.connection.is_closed:
-        driller_client = await DrillerClient().connect()
-    return driller_client
-
-def apply_defaults(defaults : ProjectConfigDefaults, projects : list[ProjectConfig]) -> dict:
-    results = []
-    for i in range(len(projects)):
-        results.append(defaults.__dict__ | projects[i].__dict__)
-    return results
-
-@app.post("/jobs")
-async def create_job(
-    jobs: JobConfigs,
-    background_tasks: BackgroundTasks,
-    driller_client: DrillerClient = Depends(get_client),
-):
-    projects : dict = apply_defaults(jobs.repositories.defaults, jobs.repositories.projects)
-    for project in projects:
-        # logger.warning(project)
-        background_tasks.add_task(driller_client.call, json.dumps({"project": project, "neo": jobs.neo.__dict__ }))
-    # result = await driller_client.call(body)
-    return Response("body", status_code=200)
