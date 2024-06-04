@@ -6,28 +6,33 @@ import Editor from '../components/Editor.vue'
 import yaml from 'js-yaml';
 import initial from '../assets/initial.yaml?raw'
 import { onBeforeRouteLeave } from 'vue-router'
-
+import axios from "axios";
 const confirmLeaveMessage = "You have unsaved changes. Are you sure you want to leave ?";
 
 const content = ref("// Some code");
 const unsavedChanges = ref(false);
 
-function parseYaml() {
-  let yamlOutput;
+function parseYaml(data) {
+  return yaml.load(data);
+}
+
+async function executeDrillJob() {
+  let jobs = parseYaml(content.value)
+
   try {
-    const result = yaml.load(content.value);
-    yamlOutput = JSON.stringify(result, null, 2);
+    let response = axios.post("http://127.0.0.1:8000/jobs/", jobs)
+    console.log(response)
   } catch (e) {
-    yamlOutput = `Error parsing YAML: ${e.message}`;
+    console.error(e)
   }
-  console.log(yamlOutput)
+  console.log(jobs)
+
 }
 
 async function loadInitial() {
   // const yamlFile = require('@/assets/initial.yaml'); // Adjust the path as necessary
   try {
     content.value = initial;
-
   } catch (e) {
     console.error("Error parsing YAML file:", e);
   }
@@ -78,7 +83,7 @@ onBeforeRouteLeave(() => {
           <h2>Editor</h2>
         </div>
         <div class="navbar">
-          <button class="btn btn-outline-success me-2" type="button" @click="parseYaml">Execute
+          <button class="btn btn-outline-success me-2" type="button" @click="executeDrillJob">Execute
             Drill Job</button>
         </div>
       </div>

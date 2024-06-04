@@ -19,6 +19,7 @@
     "@types/js-yaml": "^4.0.9",
     "@vueuse/core": "^10.10.0",
     "D": "^1.0.0",
+    "axios": "^1.7.2",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
     "js-yaml": "^4.1.0",

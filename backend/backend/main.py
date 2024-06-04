@@ -3,9 +3,10 @@ import json
 import os
 from typing import Annotated, Union
 
-from aio_pika import Channel, IncomingMessage, Message
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 
+from aio_pika import Channel, IncomingMessage, Message
 import logging
 
 from pydantic import BaseModel
@@ -21,6 +22,7 @@ port = os.environ.get("RABBITMQ_PORT", 5672)
 
 driller_client = None
 
+
 async def setup_jobs_queue():
     global driller_client
     driller_client = await DrillerClient().connect()
@@ -31,7 +33,23 @@ async def teardown_jobs_queue():
     driller_client.close()
     driller_client = None
 
+
 app = FastAPI()
+
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @asynccontextmanager
@@ -46,15 +64,19 @@ async def lifespan(app: FastAPI):
     await teardown_jobs_queue()
 
 
-
 @app.get("/")
 async def test():
     return Response("hello", status_code=200)
 
 
-class Job(BaseModel):
-    neo: dict = None
-    project: dict
+class RepositoriesConfig(BaseModel):
+    defaults: dict
+    projects: list[dict]
+    
+class JobConfigs(BaseModel):
+    neo: dict = None  # optional. Can be filled from env vars in worker.
+    repositories: RepositoriesConfig
+
 
 async def get_client() -> DrillerClient:
     global driller_client
@@ -62,10 +84,21 @@ async def get_client() -> DrillerClient:
         driller_client = await DrillerClient().connect()
     return driller_client
 
+def apply_defaults(defaults : dict, projects : list[dict]):
+    results = []
+    for i in range(len(projects)):
+        results.append(defaults | projects[i])
+    return results
+
 @app.post("/jobs")
-async def create_job(job: Job, background_tasks: BackgroundTasks,driller_client: DrillerClient = Depends(get_client)):
-    body = json.dumps(job.model_dump())
-    logger.info(body)
-    background_tasks.add_task(driller_client.call, body)
+async def create_job(
+    job: JobConfigs,
+    background_tasks: BackgroundTasks,
+    driller_client: DrillerClient = Depends(get_client),
+):
+    projects = apply_defaults(job.repositories.defaults, job.repositories.projects)
+    for project in projects:
+        # logger.warning(project)
+        background_tasks.add_task(driller_client.call, json.dumps({"project": project}))
     # result = await driller_client.call(body)
-    return Response("", status_code=204)
+    return Response("body", status_code=200)
