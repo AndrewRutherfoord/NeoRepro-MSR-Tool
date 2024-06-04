@@ -68,13 +68,35 @@ async def lifespan(app: FastAPI):
 async def test():
     return Response("hello", status_code=200)
 
+class ProjectConfigDefaults(BaseModel):
+    start_date : str
+    end_date : str
+    index_code : bool
+    index_developer_email : bool
+    
+class ProjectConfig(BaseModel):
+    project_id : str
+    repo : str
+    url : str = None
+
+    start_date : str = None
+    end_date : str = None
+    index_code : bool = False
+    index_developer_email : bool = False
 
 class RepositoriesConfig(BaseModel):
-    defaults: dict
-    projects: list[dict]
-    
+    defaults: ProjectConfigDefaults
+    projects: list[ProjectConfig]
+
+class NeoConfig(BaseModel):
+    db_url : str
+    port : int
+    db_user : str
+    db_pwd : str
+    batch_size : int
+
 class JobConfigs(BaseModel):
-    neo: dict = None  # optional. Can be filled from env vars in worker.
+    neo: NeoConfig = None  # optional. Can be filled from env vars in worker.
     repositories: RepositoriesConfig
 
 
@@ -84,21 +106,21 @@ async def get_client() -> DrillerClient:
         driller_client = await DrillerClient().connect()
     return driller_client
 
-def apply_defaults(defaults : dict, projects : list[dict]):
+def apply_defaults(defaults : ProjectConfigDefaults, projects : list[ProjectConfig]) -> dict:
     results = []
     for i in range(len(projects)):
-        results.append(defaults | projects[i])
+        results.append(defaults.__dict__ | projects[i].__dict__)
     return results
 
 @app.post("/jobs")
 async def create_job(
-    job: JobConfigs,
+    jobs: JobConfigs,
     background_tasks: BackgroundTasks,
     driller_client: DrillerClient = Depends(get_client),
 ):
-    projects = apply_defaults(job.repositories.defaults, job.repositories.projects)
+    projects : dict = apply_defaults(jobs.repositories.defaults, jobs.repositories.projects)
     for project in projects:
         # logger.warning(project)
-        background_tasks.add_task(driller_client.call, json.dumps({"project": project}))
+        background_tasks.add_task(driller_client.call, json.dumps({"project": project, "neo": jobs.neo.__dict__ }))
     # result = await driller_client.call(body)
     return Response("body", status_code=200)
