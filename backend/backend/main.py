@@ -1,15 +1,16 @@
 from contextlib import asynccontextmanager
+import json
 import os
-from typing import Union
+from typing import Annotated, Union
 
 from aio_pika import Channel, IncomingMessage, Message
-from fastapi import Depends, FastAPI, Response
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, Response
 
 import logging
 
 from pydantic import BaseModel
 
-from backend.jobs_queue import RabbitMQManager
+from backend.jobs_queue import DrillerClient, RabbitMQManager
 
 logger = logging.getLogger(__name__)
 
@@ -18,26 +19,19 @@ passwd = os.environ.get("RABBITMQ_DEFAULT_PASS", "guest")
 host = os.environ.get("RABBITMQ_HOST", "127.0.0.1")
 port = os.environ.get("RABBITMQ_PORT", 5672)
 
-rabbitmq_manager = RabbitMQManager(
-    f"amqp://{user}:{passwd}@{host}:{port}/",
-    queue_name="fastapi",
-    callback_queue_name="logs",
-)
-
-
-async def process_message(message: IncomingMessage):
-    async with message.process():
-        print("Received message:", message.body.decode())
-
+driller_client = None
 
 async def setup_jobs_queue():
-    await rabbitmq_manager.get_channel()
-    await rabbitmq_manager.consume(process_message)
+    global driller_client
+    driller_client = await DrillerClient().connect()
 
 
 async def teardown_jobs_queue():
-    await rabbitmq_manager._channel.close()
-    await rabbitmq_manager._connection.close()
+    global driller_client
+    driller_client.close()
+    driller_client = None
+
+app = FastAPI()
 
 
 @asynccontextmanager
@@ -52,8 +46,6 @@ async def lifespan(app: FastAPI):
     await teardown_jobs_queue()
 
 
-app = FastAPI()
-
 
 @app.get("/")
 async def test():
@@ -61,16 +53,19 @@ async def test():
 
 
 class Job(BaseModel):
-    neo: dict
+    neo: dict = None
     project: dict
 
+async def get_client() -> DrillerClient:
+    global driller_client
+    if driller_client is None or driller_client.connection.is_closed:
+        driller_client = await DrillerClient().connect()
+    return driller_client
 
 @app.post("/jobs")
-async def create_job(
-    job: Job, channel: Channel = Depends(rabbitmq_manager.get_channel)
-):
-    print(job.project)
-    print(job.neo)
-    body = str(job.model_dump())
-    await channel.default_exchange.publish(Message(body=body.encode()), routing_key="fastapi", callback_queue_name="logs")
+async def create_job(job: Job, background_tasks: BackgroundTasks,driller_client: DrillerClient = Depends(get_client)):
+    body = json.dumps(job.model_dump())
+    logger.info(body)
+    background_tasks.add_task(driller_client.call, body)
+    # result = await driller_client.call(body)
     return Response("", status_code=204)
