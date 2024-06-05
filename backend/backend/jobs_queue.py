@@ -81,7 +81,7 @@ class DrillerClient(object):
             routing_key=self.queue,
         )
 
-        return await future
+        # return await future
     
     async def close(self):
         self.channel.close()
