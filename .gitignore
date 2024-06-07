@@ -171,3 +171,6 @@ cython_debug/
 */repos
 neo4j_db
 rabbitmq
+
+# Cost awareness dataset. https://github.com/feitosa-daniel/cloud-cost-awareness/blob/main/scripts/data/dataset.json
+/testing/dataset.json 

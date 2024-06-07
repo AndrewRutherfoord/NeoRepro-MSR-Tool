@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.10"
 fastapi = "^0.111.0"
 aio-pika = "^9.4.1"
+sqlmodel = "^0.0.19"
 
 
 [build-system]

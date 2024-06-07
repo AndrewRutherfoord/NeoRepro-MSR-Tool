@@ -1,18 +1,17 @@
 from contextlib import asynccontextmanager
-import json
 import os
-from typing import Annotated, Union
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from aio_pika import Channel, IncomingMessage, Message
 import logging
 
-from pydantic import BaseModel
+from sqlmodel import Session, select
 
-from backend.jobs_queue import DrillerClient, RabbitMQManager
+from backend.database import create_db_and_tables, engine
+from backend.jobs_queue import DrillerClient
 from backend.routers import driller_router
+
 logger = logging.getLogger(__name__)
 
 user = os.environ.get("RABBITMQ_DEFAULT_USER", "guest")
@@ -22,6 +21,7 @@ port = os.environ.get("RABBITMQ_PORT", 5672)
 
 driller_client = None
 
+# ---------- Rabbit MQ ----------
 
 async def setup_jobs_queue():
     global driller_client
@@ -35,22 +35,39 @@ async def teardown_jobs_queue():
 
 async def get_client(request: Request) -> DrillerClient:
     global driller_client
+
     if driller_client is None or driller_client.connection.is_closed:
         driller_client = await DrillerClient().connect()
         logger.warning("Setting client")
+
+    # Sets the drill client state in request. Can be accessed in endpoint with request injection and `request.state.driller_client`
     request.state.driller_client = driller_client
     return driller_client
 
-app = FastAPI(dependencies=[Depends(get_client)])
+
+# ---------- FastAPi ----------
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Setup the queue on startup
+    await setup_jobs_queue()
+    logger.warning("Creating DB tables.")
+    create_db_and_tables()
+
+    yield
+
+    # Disconnect the queue on teardown.
+    await teardown_jobs_queue()
+
+app = FastAPI(dependencies=[Depends(get_client)], lifespan=lifespan)
+
 app.include_router(driller_router.router)
 
 origins = [
-    "http://localhost.tiangolo.com",
-    "https://localhost.tiangolo.com",
-    "http://localhost",
     "http://localhost:5173",
 ]
 
+# Very open CORS. Stricter not necessary since app won't be deployed.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -60,19 +77,8 @@ app.add_middleware(
 )
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Load the ML model
-    logger.info("Startup lifespan hook.")
-    await setup_jobs_queue()
-
-    yield
-
-    logger.info("Shutdown lifespan hook.")
-    await teardown_jobs_queue()
-
-
 @app.get("/")
 async def test():
+    logger.warning("TEST")
     return Response("hello", status_code=200)
 
