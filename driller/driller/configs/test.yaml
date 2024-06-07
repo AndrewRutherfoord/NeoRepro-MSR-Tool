@@ -1,9 +1,3 @@
-neo:
-  db_url: neo4j
-  port: 7687
-  db_user: neo4j
-  db_pwd: neo4j123
-  batch_size: 50
 
 repositories:
   defaults: 
@@ -15,9 +9,3 @@ repositories:
     - project_id: 'pydriller'
       url: https://github.com/ishepard/pydriller.git
       repo: pydriller
-      start_date: 1 April, 2022 00:00
-      end_date: 30 April, 2022 00:00
-    - project_id: 'ChromeQueryParamAppender'
-      repo: ChromeQueryParamAppender
-      start_date: 1 April, 2022 00:00
-      end_date: 20 April, 2022 00:00
