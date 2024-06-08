@@ -42,27 +42,6 @@ files = [
 ]
 
 [[package]]
-name = "diskcache"
-version = "4.1.0"
-description = "Disk Cache -- Disk and file backed persistent cache."
-optional = false
-python-versions = "*"
-files = [
-    {file = "diskcache-4.1.0-py2.py3-none-any.whl", hash = "sha256:69b253a6ffe95bb4bafb483b97c24fca3c2c6c47b82e92b36486969a7e80d47d"},
-    {file = "diskcache-4.1.0.tar.gz", hash = "sha256:bcee5a59f9c264e2809e58d01be6569a3bbb1e36a1e0fb83f7ef9b2075f95ce0"},
-]
-
-[[package]]
-name = "docopt"
-version = "0.6.2"
-description = "Pythonic argument parser, that will make you smile"
-optional = false
-python-versions = "*"
-files = [
-    {file = "docopt-0.6.2.tar.gz", hash = "sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491"},
-]
-
-[[package]]
 name = "exceptiongroup"
 version = "1.2.1"
 description = "Backport of PEP 654 (exception groups)"
@@ -107,26 +86,6 @@ gitdb = ">=4.0.1,<5"
 [package.extras]
 doc = ["sphinx (==4.3.2)", "sphinx-autodoc-typehints", "sphinx-rtd-theme", "sphinxcontrib-applehelp (>=1.0.2,<=1.0.4)", "sphinxcontrib-devhelp (==1.0.2)", "sphinxcontrib-htmlhelp (>=2.0.0,<=2.0.1)", "sphinxcontrib-qthelp (==1.0.3)", "sphinxcontrib-serializinghtml (==1.1.5)"]
 test = ["coverage[toml]", "ddt (>=1.1.1,!=1.4.3)", "mock", "mypy", "pre-commit", "pytest (>=7.3.1)", "pytest-cov", "pytest-instafail", "pytest-mock", "pytest-sugar", "typing-extensions"]
-
-[[package]]
-name = "graphrepo"
-version = "0.4.0"
-description = "A tool that maps a Git repo to Neo4j and Helps Mining the repo in the database. Recreated with updated packages."
-optional = false
-python-versions = "^3.10"
-files = []
-develop = true
-
-[package.dependencies]
-diskcache = "4.1.0"
-neo4j = "5.19.0"
-pydriller = "1.15.1"
-pyyaml = "^6.0.1"
-stomp-py = "7.0.0"
-
-[package.source]
-type = "directory"
-url = "../GraphRepo"
 
 [[package]]
 name = "idna"
@@ -262,12 +221,12 @@ files = [
 
 [[package]]
 name = "neo4j"
-version = "5.19.0"
+version = "5.20.0"
 description = "Neo4j Bolt driver for Python"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "neo4j-5.19.0.tar.gz", hash = "sha256:23704f604214174f3b7d15a38653a1462809986019dfdaf773ff7ca4e1b9e2de"},
+    {file = "neo4j-5.20.0.tar.gz", hash = "sha256:c59e54a0c0fa1f109f1d2fa5293c29c2bb30ba388b4f9dd9656919793c10063a"},
 ]
 
 [package.dependencies]
@@ -337,19 +296,19 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pydriller"
-version = "1.15.1"
+version = "2.6"
 description = "Framework for MSR"
 optional = false
 python-versions = ">=3.5"
 files = [
-    {file = "PyDriller-1.15.1-py3-none-any.whl", hash = "sha256:d7317e7e8bc57727c3ac0357771e749b2390b5dabe39064693c29632c0009b45"},
-    {file = "PyDriller-1.15.1.tar.gz", hash = "sha256:4eba1bc75a07e711230834140143b154c73cf3117177081c5ddcdcee8ded751b"},
+    {file = "PyDriller-2.6-py3-none-any.whl", hash = "sha256:4a27f76081a5864a03c562db3c2a8f47afa721b5b190131396bf477125cd967e"},
 ]
 
 [package.dependencies]
 gitpython = "*"
 lizard = "*"
 pytz = "*"
+types-pytz = "*"
 
 [[package]]
 name = "pytest"
@@ -456,20 +415,6 @@ files = [
 ]
 
 [[package]]
-name = "stomp-py"
-version = "7.0.0"
-description = "Python STOMP client, supporting versions 1.0, 1.1 and 1.2 of the protocol"
-optional = false
-python-versions = ">=3.6,<4.0"
-files = [
-    {file = "stomp.py-7.0.0-py3-none-any.whl", hash = "sha256:6e1d93f2b2a7c63301f3e09e7ffa82ea80affec59164cd8c9b7807af4fe0e732"},
-    {file = "stomp.py-7.0.0.tar.gz", hash = "sha256:fb301f338292b1b95089c6f1d3a38a9dd8353a5ff3f921e389dfa5f9413b5a8a"},
-]
-
-[package.dependencies]
-docopt = ">=0.6.2,<0.7.0"
-
-[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -478,6 +423,17 @@ python-versions = ">=3.7"
 files = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
     {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
+]
+
+[[package]]
+name = "types-pytz"
+version = "2024.1.0.20240417"
+description = "Typing stubs for pytz"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-pytz-2024.1.0.20240417.tar.gz", hash = "sha256:6810c8a1f68f21fdf0f4f374a432487c77645a0ac0b31de4bf4690cf21ad3981"},
+    {file = "types_pytz-2024.1.0.20240417-py3-none-any.whl", hash = "sha256:8335d443310e2db7b74e007414e74c4f53b67452c0cb0d228ca359ccfba59659"},
 ]
 
 [[package]]
@@ -586,4 +542,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "eebd7698903b174e5ce8cd52e034eb12c017a43c67ab148b7bb4d5cd1f4aac58"
+content-hash = "fe55b059c50f946e65c9f8ab78e754ad514e2b5f18c5259be8b7cf2431f43a40"

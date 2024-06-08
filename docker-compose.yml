@@ -39,6 +39,7 @@ services:
     # network_mode: host
     volumes:
      - ./driller/repos:/app/driller/repos
+     - ./driller/:/app/driller/
     deploy:
       replicas: 3
     # container_name: driller_worker

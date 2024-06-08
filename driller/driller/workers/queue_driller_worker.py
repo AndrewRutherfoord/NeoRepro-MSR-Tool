@@ -3,7 +3,7 @@ import logging
 import pika
 
 from driller.cloner import clone_repository
-from driller.config_driller import (
+from driller.drillers.driller import (
     ConfigDriller,
 )
 from driller.settings.default import (
