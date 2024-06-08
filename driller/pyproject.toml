@@ -8,9 +8,12 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 pika = "^1.3.2"
+aio-pika = "^9.4.1"
 GraphRepo = {path = "../GraphRepo", develop = true}
 
-aio-pika = "^9.4.1"
+[tool.poetry.group.test.dependencies]
+pytest = "^8.2.2"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
@@ -18,3 +21,4 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 driller-worker = "driller.main:exec"
 test-client = "driller.test_client:exec"
+test-config-driller = "driller.config_driller:main"

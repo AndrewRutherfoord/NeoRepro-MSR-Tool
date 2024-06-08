@@ -1,5 +1,5 @@
 neo:
-  db_url: localhost
+  db_url: neo4j
   port: 7687
   db_user: neo4j
   db_pwd: neo4j123
@@ -14,4 +14,4 @@ repositories:
   projects:
     - project_id: 'pydriller'
       url: https://github.com/ishepard/pydriller.git
-      repo: pydriller
+      repo: ./repos/pydriller

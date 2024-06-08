@@ -48,6 +48,7 @@ def handle_date(data: dict, date_key: str, boundary: datetime = None) -> datetim
 
 def parse_config(conf):
     logger.info(conf)
+    neo = None
     try:
         neo = Neo4jConfig(**conf["neo"])
     except KeyError as e:

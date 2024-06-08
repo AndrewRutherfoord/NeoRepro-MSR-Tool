@@ -17,12 +17,14 @@ WORKDIR /app/driller
 RUN git config --global --add safe.directory '*'
 
 COPY ./driller/poetry.lock ./driller/pyproject.toml ./
+COPY ./driller/pytest.ini ./
 
 COPY ./GraphRepo /app/GraphRepo
 
 RUN poetry install && rm -rf $POETRY_CACHE_DIR
 
 COPY ./driller/driller ./driller
+COPY ./driller/tests ./tests
 
 CMD ["poetry", "run", "python3","-m","driller.main"]
 

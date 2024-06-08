@@ -4,7 +4,10 @@ from dataclasses import asdict
 from graphrepo.config import Config
 from graphrepo.drillers.driller import Driller
 
-from .driller_config import Neo4jConfig, ProjectConfig
+from driller.cloner import clone_repository
+from driller.util import load_yaml, parse_config
+
+from driller.driller_config import DrillConfig, Neo4jConfig, ProjectConfig, ProjectDefaults, apply_defaults
 
 URI = "neo4j://localhost:7687"
 AUTH = ("neo4j", "neo4j123")
@@ -24,21 +27,3 @@ class ConfigDriller(Driller):
             self._connect()
         except Exception as exc:
             logger.exception(exc)
-
-
-# def drill_repositories(
-#     projects: list[ProjectConfig], neo: Neo4jConfig, project_defaults: ProjectDefaults
-# ):
-#     logger.debug(project_defaults)
-
-#     project_applied_defaults = []
-#     for project in projects:
-#         p = apply_defaults(project, defaults=project_defaults)
-#         if project.url:
-#             clone_repository(
-#                 repository_url=project.url, repository_location=project.repo
-#             )
-#         project_applied_defaults.append(p)
-
-#     for project in project_applied_defaults:
-#         execute_repository_drill_job(neo, project)
