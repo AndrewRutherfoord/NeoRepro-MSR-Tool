@@ -13,11 +13,14 @@ import 'bootstrap'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 // import "bootstrap-icons"
 
+import axios from 'axios'
+
+axios.defaults.baseURL = 'http://127.0.0.1:8000/'
+
 const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
-
 app.use(VueMonacoEditorPlugin, {
   paths: {
     // The recommended CDN config

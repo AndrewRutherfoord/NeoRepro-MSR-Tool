@@ -10,6 +10,8 @@ python = "^3.10"
 fastapi = "^0.111.0"
 aio-pika = "^9.4.1"
 sqlmodel = "^0.0.19"
+sqlalchemy-utils = "^0.41.2"
+alembic = "^1.13.1"
 
 
 [build-system]

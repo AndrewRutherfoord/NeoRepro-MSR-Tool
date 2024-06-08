@@ -43,12 +43,12 @@ const routes = [
     {
         label: "Editor",
         icon: "bi bi-pencil-square",
-        routeName: "about"
+        routeName: "editor"
     },
     {
-        label: "Job",
-        icon: "bi bi-server",
-        routeName: ""
+        label: "Jobs",
+        icon: "bi bi-clipboard-data",
+        routeName: "jobs-list"
     },
 ]
 

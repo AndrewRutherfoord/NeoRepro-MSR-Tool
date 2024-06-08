@@ -23,6 +23,7 @@ driller_client = None
 
 # ---------- Rabbit MQ ----------
 
+
 async def setup_jobs_queue():
     global driller_client
     driller_client = await DrillerClient().connect()
@@ -32,6 +33,7 @@ async def teardown_jobs_queue():
     global driller_client
     driller_client.close()
     driller_client = None
+
 
 async def get_client(request: Request) -> DrillerClient:
     global driller_client
@@ -47,19 +49,21 @@ async def get_client(request: Request) -> DrillerClient:
 
 # ---------- FastAPi ----------
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Setup the queue on startup
     await setup_jobs_queue()
-    logger.warning("Creating DB tables.")
-    create_db_and_tables()
 
     yield
 
     # Disconnect the queue on teardown.
     await teardown_jobs_queue()
 
-app = FastAPI(dependencies=[Depends(get_client)], lifespan=lifespan)
+
+app = FastAPI(
+    dependencies=[Depends(get_client)], lifespan=lifespan
+)
 
 app.include_router(driller_router.router)
 
@@ -81,4 +85,3 @@ app.add_middleware(
 async def test():
     logger.warning("TEST")
     return Response("hello", status_code=200)
-
