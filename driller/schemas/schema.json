@@ -3,6 +3,7 @@
   "type": "object",
   "properties": {
     "defaults": {
+      "description": "Each value will be applied to each repository config given the value isn't overridden in the repo. config.",
       "$ref": "#/definitions/shared"
     },
     "repositories": {
@@ -11,16 +12,20 @@
         "type": "object",
         "properties": {
           "name": {
+            "description": "Name of the repository. If repositories are pre-clone, this will be used to access the repository.",
             "type": "string"
           },
           "url": {
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "description": "If repository cannot be found on system, url used to clone it."
           },
           "delete_clone": {
+            "description": "If repository was cloned, then True will result in the clone being deleted once drilling complete.",
             "type": "boolean"
-          },
-          "index_file_modifications": {
+            },
+            "index_file_modifications": {
+            "description": "Should commit file modification be drilled. Takes longer to drill large repositories.",
             "type": "boolean"
           },
           "pydriller": {
@@ -55,6 +60,7 @@
     },
     "pydriller": {
       "type": "object",
+      "description": "Use the pydriller builtin filters. Pydriller Reference: https://pydriller.readthedocs.io/en/latest/repository.html",
       "properties": {
         "since": { "type": "string", "format": "date-time" },
         "from_commit": { "type": "string" },
@@ -75,6 +81,7 @@
       }
     },
     "filters": {
+      "description": "String filtering of items before insertion into storage. A list of filter configs which behave as boolean AND. All filters must be valid for an item to be inserted into storage.",
       "type": "object",
       "properties": {
         "commit": {
@@ -82,9 +89,19 @@
           "items": {
             "type": "object",
             "properties": {
-              "field": { "type": "string" },
-              "filter_value": { "type": "string" },
+              "field": {
+                "type": "string",
+                "description": "The field on the object to be filtered. Eg. `msg` for commit message. "
+              },
+              "filter_value": {
+                "description": "String or list of strings to be found in field. Behaves as an OR when a list is provided. True if any of the strings found.",
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "array", "items": { "type": "string" } }
+                ]
+              },
               "method": {
+                "description": "The string filtering mode.",
                 "type": "string",
                 "enum": ["exact", "!exact", "contains", "!contains"]
               }
