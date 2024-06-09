@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 now = datetime.now()
 
 # Calculate the date and time two weeks ago
-period = now - timedelta(weeks=52)
+period = now - timedelta(weeks=150)
 
 from driller.settings.default import NEO4J_HOST, NEO4J_PORT, NEO4J_USER, NEO4J_PASSWORD
 
@@ -57,6 +57,9 @@ class TestStorage(RepositoryDataStorage):
     def store_developer(self, developer):
         pass
 
+    def store_modified_file(self, commit, file):
+        pass
+
 
 def test_commit_exact_filter():
     msg = "Update continuous-integration-workflow.yml"
@@ -97,6 +100,7 @@ def test_commit_contains_filter():
 
     driller.drill_repository()
     driller.drill_commits(
+        drill_files=False,
         pydriller_filters={"since": period},
         filter_configs=[
             {
@@ -122,6 +126,7 @@ def test_commit_contains_filter():
 
     driller.drill_repository()
     driller.drill_commits(
+        drill_files=False,
         pydriller_filters={"since": period},
         filter_configs=[
             {

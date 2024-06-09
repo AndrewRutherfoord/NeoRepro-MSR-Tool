@@ -8,6 +8,8 @@ from neo4j import GraphDatabase
 from driller.driller_config import Neo4jConfig
 from pydriller import Repository, Commit
 
+from repos.pydriller.pydriller.domain.commit import ModificationType
+
 URI = "neo4j://localhost:7687"
 AUTH = ("neo4j", "neo4j123")
 
@@ -31,9 +33,9 @@ class RepositoryDataStorage(ABC):
     def store_developer(self, developer):
         pass
 
-    # @abstractmethod
-    # def store_modification(self, commit, modification):
-    #     pass
+    @abstractmethod
+    def store_modified_file(self, commit, file):
+        pass
 
 
 class RepositoryNeo4jStorage(RepositoryDataStorage):
@@ -54,6 +56,10 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         self._create_indexes_and_constraints()
 
     def close(self):
+        """
+        Closes the Neo4j connection.
+        Processes remaining batch just before close.
+        """
         self._process_batch()
         self.driver.close()
 
@@ -73,11 +79,18 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
             )
 
     def _add_to_batch(self, query, parameters):
+        """Adds a query to the batch of queries.
+
+        Args:
+            query (str): query string
+            parameters (dict): the parameters that will be inserted into the queries.
+        """
         self.batch.append((query, parameters))
         if len(self.batch) >= self.batch_size:
             self._process_batch()
 
     def _process_batch(self):
+        """Runs a batch of cypher commands on the Neo4j DB."""
         logger.info("Processing Batch")
         if self.batch:
             with self.driver.session() as session:
@@ -100,9 +113,10 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         )
 
     def store_developer(self, developer):
-        # Store the information for a developer.
+        """Store the information for a developer."""
+
         self._add_to_batch(
-            "MERGE (d:Developer {email: $email}) " "SET d.name = $name",
+            "MERGE (d:Developer {email: $email}) SET d.name = $name",
             {
                 "email": developer.email,
                 "name": developer.name,
@@ -110,7 +124,8 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         )
 
     def store_commit(self, repo_name, commit: Commit):
-        # Stores an instance of a commit and links it to the author.
+        """Stores an instance of a commit and links it to the author."""
+
         self._add_to_batch(
             "MATCH (d:Developer {email: $email}) "
             "MERGE (c:Commit {hash: $hash}) "
@@ -151,6 +166,56 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
                     "branch_name": branch,
                     "hash": commit.hash,
                 },
+            )
+
+    def store_modified_file(self, commit, file):
+        # logger.info(file)
+        self._add_to_batch(
+            "MATCH (c:Commit {hash: $hash}) "
+            "MERGE (f:File {name: $filename}) "
+            "MERGE (c)-[r:MODIFIED]->(f) "
+            "SET f.name = $filename, "
+            "r.old_path = $old_path, r.new_path = $new_path, "
+            "r.filename = $filename, r.change_type = $change_type, "
+            # "r.diff = $diff, r.diff_parsed = $diff_parsed, "
+            "r.added_lines = $added_lines, r.deleted_lines = $deleted_lines, "
+            # "r.source_code = $source_code ,"
+            # "r.source_code_before = $source_code_before, r.methods = $methods ,"
+            # "r.methods_before = $methods_before, r.changed_methods = $changed_methods ,"
+            "r.nloc = $nloc, r.complexity = $complexity, r.token_count = $token_count",
+            {
+                "hash": commit.hash,
+                "filename": file.filename,
+                "old_path": file.old_path,
+                "new_path": file.new_path,
+                "filename": file.filename,
+                "change_type": file.change_type.name, #ENUM
+                # "diff": file.diff,
+                # "diff_parsed": file.diff_parsed,
+                "added_lines": file.added_lines,
+                "deleted_lines": file.deleted_lines,
+                # "source_code": file.source_code,
+                # "source_code_before": file.source_code_before,
+                # "methods": file.methods,
+                # "methods_before": file.methods_before,
+                # "changed_methods": file.changed_methods,
+                "nloc": file.nloc,
+                "complexity": file.complexity,
+                "token_count": file.token_count,
+            },
+        )
+        
+        if (file.change_type.name == "RENAME"):
+            old_name = file.old_path.split('/')[-1]
+            logger.info(old_name)
+            self._add_to_batch(
+                "MATCH  (old:File {name : $old_name}),(new:File {name: $filename})"
+                "MERGE (old)-[:RENAMED_TO]->(new)",
+                {
+                    "old_name": old_name,
+                    "filename": file.filename
+                }
+                
             )
 
 
@@ -195,17 +260,27 @@ class RepositoryDriller:
     def _handle_branches(self, branch_names):
         for b in branch_names:
             self.storage.store_branch(self.repository_name, b)
-        
+
     def _handle_committer(self, committer):
         self.storage.store_developer(committer)
 
-    def drill_commits(self, filter_configs: dict = {}, pydriller_filters={}):
+    def _handle_modified_files(self, commit: Commit, files):
+        for file in files:
+            self.storage.store_modified_file(commit, file)
+
+    def drill_commits(
+        self, filter_configs: dict = {}, pydriller_filters={}, drill_files=True
+    ):
         for commit in self.get_commits(pydriller_filters):
             if self.commit_filter(commit, filter_configs):
+                logger.info("Drilling Commit")
                 self._handle_branches(commit.branches)
                 self._handle_committer(commit.author)
 
                 self.storage.store_commit(self.repository_name, commit)
+
+                if drill_files:
+                    self._handle_modified_files(commit, commit.modified_files)
 
     def commit_filter(self, commit, filter_configs: list[dict]) -> bool:
         """Used to determine whether a commit should be inserted into the database
