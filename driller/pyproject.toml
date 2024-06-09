@@ -14,6 +14,7 @@ pydriller = "^2.6"
 neo4j = "^5.20.0"
 pyyaml = "^6.0.1"
 pytest-mock = "^3.14.0"
+jsonschema = "^4.22.0"
 [tool.poetry.group.test.dependencies]
 pytest = "^8.2.2"
 

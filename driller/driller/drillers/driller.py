@@ -5,10 +5,7 @@ import queue
 from neo4j import GraphDatabase
 
 
-from driller.driller_config import Neo4jConfig
 from pydriller import Repository, Commit
-
-from repos.pydriller.pydriller.domain.commit import ModificationType
 
 URI = "neo4j://localhost:7687"
 AUTH = ("neo4j", "neo4j123")
@@ -64,7 +61,7 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         self.driver.close()
 
     def _create_indexes_and_constraints(self):
-        """ Creates the uniqueness constraints for the repository database."""
+        """Creates the uniqueness constraints for the repository database."""
         with self.driver.session() as session:
             session.run(
                 "CREATE CONSTRAINT IF NOT EXISTS FOR (r:Repository) REQUIRE r.name IS UNIQUE"
@@ -288,24 +285,17 @@ class RepositoryDriller:
             filter_value = item.get("value")
             method = item.get("method", "exact")
 
-            if (
-                method == "exact"
-                and getattr(commit, field, f"`{field}` not in Commit.") != filter_value
-            ):
+            value = getattr(commit, field, f"`{field}` not in Commit.")
+
+            if method == "exact" and value != filter_value:
                 return False
-            elif (
-                method == "!exact"
-                and getattr(commit, field, f"`{field}` not in Commit.") == filter_value
-            ):
+            elif method == "!exact" and value == filter_value:
                 return False
-            elif method == "contains" and filter_value not in getattr(
-                commit, field, f"`{field}` not in Commit."
-            ):
+            elif method == "contains" and filter_value not in value:
                 return False
-            elif method == "!contains" and filter_value in getattr(
-                commit, field, f"`{field}` not in Commit."
-            ):
+            elif method == "!contains" and filter_value in value:
                 return False
+
         return True
 
     def drill_repository(self):

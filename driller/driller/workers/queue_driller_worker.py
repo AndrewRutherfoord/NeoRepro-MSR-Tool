@@ -5,6 +5,7 @@ import pika
 from driller.cloner import clone_repository
 from driller.drillers.driller import (
     ConfigDriller,
+    RepositoryDataStorage,
 )
 from driller.settings.default import (
     NEO4J_DEFAULT_BATCH_SIZE,
@@ -22,10 +23,11 @@ logger = logging.getLogger(__name__)
 
 class QueueDrillerWorker(QueueWorker):
 
-    def __init__(self, host, port, queue, driller_class):
+    def __init__(self, host, port, queue, driller_class, storage : RepositoryDataStorage):
         super().__init__(host, port, queue)
 
         self.driller_class = driller_class
+        self.storage = storage
 
     def execute_drill_job(self, conf: DrillConfig):
         project = conf.project
@@ -48,15 +50,6 @@ class QueueDrillerWorker(QueueWorker):
 
         driller.drill_batch()
         driller.merge_all()
-
-    def get_env_neo(self):
-        return Neo4jConfig(
-            db_user=NEO4J_USER,
-            db_pwd=NEO4J_PASSWORD,
-            db_url=NEO4J_HOST,
-            port=NEO4J_PORT,
-            batch_size=int(NEO4J_DEFAULT_BATCH_SIZE),
-        )
 
     def on_request(self, body):
         try:

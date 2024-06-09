@@ -30,3 +30,11 @@ def clone_repository(repository_url, repository_location):
         
 
     Repo.clone_from(repository_url, repository_location)
+
+def remove_repository_clone(repository_location):
+    try:
+        if os.path.exists(repository_location):
+            os.remove(repository_location)
+    except Exception as e:
+        logger.exception(e)
+        raise e
