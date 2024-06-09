@@ -64,12 +64,13 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         self.driver.close()
 
     def _create_indexes_and_constraints(self):
+        """ Creates the uniqueness constraints for the repository database."""
         with self.driver.session() as session:
             session.run(
                 "CREATE CONSTRAINT IF NOT EXISTS FOR (r:Repository) REQUIRE r.name IS UNIQUE"
             )
             session.run(
-                "CREATE CONSTRAINT IF NOT EXISTS FOR (b:Branch) REQUIRE b.name IS UNIQUE"
+                "CREATE CONSTRAINT IF NOT EXISTS FOR (b:Branch) REQUIRE (b.name, b.repository) IS UNIQUE"
             )
             session.run(
                 "CREATE CONSTRAINT IF NOT EXISTS FOR (d:Developer) REQUIRE d.email IS UNIQUE"
@@ -105,7 +106,7 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
     def store_branch(self, repo_name, branch_name):
         self._add_to_batch(
             "MATCH (r:Repository {name: $repo_name}) "
-            "MERGE (b:Branch {name: $branch_name})-[:PART_OF]->(r)",
+            "MERGE (b:Branch {name: $branch_name, repository: $repo_name })-[:PART_OF]->(r)",
             {
                 "repo_name": repo_name,
                 "branch_name": branch_name,
@@ -126,6 +127,7 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
     def store_commit(self, repo_name, commit: Commit):
         """Stores an instance of a commit and links it to the author."""
 
+        # Create or Update commit and link it to the developer as an `AUTHOR` relationship.
         self._add_to_batch(
             "MATCH (d:Developer {email: $email}) "
             "MERGE (c:Commit {hash: $hash}) "
@@ -146,8 +148,8 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
             },
         )
 
-        # Linking the commit to it's parent (if it exists)
         for parent_hash in commit.parents:
+            # Create a `PARENT` relationship between the current commit and it's parents
             self._add_to_batch(
                 "MATCH (c:Commit {hash: $hash}), (p:Commit {hash: $parent_hash}) "
                 "MERGE (c)-[:PARENT]->(p)",
@@ -157,8 +159,8 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
                 },
             )
 
-        # Linking the commit to it's branch
         for branch in commit.branches:
+            # Create an `IN_BRANCH` relationship between the commit and the branches it belongs to.
             self._add_to_batch(
                 "MATCH (b:Branch {name: $branch_name}), (c:Commit {hash: $hash})"
                 "MERGE (c)-[:IN_BRANCH]->(b)",
@@ -169,7 +171,8 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
             )
 
     def store_modified_file(self, commit, file):
-        # logger.info(file)
+        # Creates or Updates a FIle instance and links it to the commit with a `MODIFIED` relationship
+        # Relationship holds all the modification information
         self._add_to_batch(
             "MATCH (c:Commit {hash: $hash}) "
             "MERGE (f:File {name: $filename}) "
@@ -177,11 +180,7 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
             "SET f.name = $filename, "
             "r.old_path = $old_path, r.new_path = $new_path, "
             "r.filename = $filename, r.change_type = $change_type, "
-            # "r.diff = $diff, r.diff_parsed = $diff_parsed, "
             "r.added_lines = $added_lines, r.deleted_lines = $deleted_lines, "
-            # "r.source_code = $source_code ,"
-            # "r.source_code_before = $source_code_before, r.methods = $methods ,"
-            # "r.methods_before = $methods_before, r.changed_methods = $changed_methods ,"
             "r.nloc = $nloc, r.complexity = $complexity, r.token_count = $token_count",
             {
                 "hash": commit.hash,
@@ -189,33 +188,24 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
                 "old_path": file.old_path,
                 "new_path": file.new_path,
                 "filename": file.filename,
-                "change_type": file.change_type.name, #ENUM
-                # "diff": file.diff,
-                # "diff_parsed": file.diff_parsed,
+                "change_type": file.change_type.name,  # ENUM
                 "added_lines": file.added_lines,
                 "deleted_lines": file.deleted_lines,
-                # "source_code": file.source_code,
-                # "source_code_before": file.source_code_before,
-                # "methods": file.methods,
-                # "methods_before": file.methods_before,
-                # "changed_methods": file.changed_methods,
                 "nloc": file.nloc,
                 "complexity": file.complexity,
                 "token_count": file.token_count,
             },
         )
-        
-        if (file.change_type.name == "RENAME"):
-            old_name = file.old_path.split('/')[-1]
+        # TODO: Other fields that can be used: diff, diff_parsed, source_code, source_code_before, methods, methods_before, changed_methods,
+
+        # If the file change is a RENAME, create a `RENAMED_TO` relation from the old file node.
+        if file.change_type.name == "RENAME":
+            old_name = file.old_path.split("/")[-1]
             logger.info(old_name)
             self._add_to_batch(
                 "MATCH  (old:File {name : $old_name}),(new:File {name: $filename})"
                 "MERGE (old)-[:RENAMED_TO]->(new)",
-                {
-                    "old_name": old_name,
-                    "filename": file.filename
-                }
-                
+                {"old_name": old_name, "filename": file.filename},
             )
 
 
@@ -268,11 +258,12 @@ class RepositoryDriller:
         for file in files:
             self.storage.store_modified_file(commit, file)
 
-    def drill_commits(
-        self, filter_configs: dict = {}, pydriller_filters={}, drill_files=True
-    ):
+    def drill_commits(self, filters: dict = {}, pydriller_filters={}, drill_files=True):
+        """Drills all the commits based on the filters and pydriller configs.
+        Inserts all the data into the storage.
+        """
         for commit in self.get_commits(pydriller_filters):
-            if self.commit_filter(commit, filter_configs):
+            if self.commit_filter(commit, filters):
                 logger.info("Drilling Commit")
                 self._handle_branches(commit.branches)
                 self._handle_committer(commit.author)
@@ -318,4 +309,5 @@ class RepositoryDriller:
         return True
 
     def drill_repository(self):
+        """Drills the repository information and inserts it into the storage."""
         self.storage.store_repository(self.repository_name)
