@@ -21,7 +21,7 @@ from driller.settings.default import NEO4J_HOST, NEO4J_PORT, NEO4J_USER, NEO4J_P
 #     driller = RepositoryDriller("repos/pydriller", storage)
 
 #     driller.drill_commits(since=period)
-    # assert False
+#     assert False
 
 def test_commit_drill_neo4j_insert():
     
