@@ -27,9 +27,14 @@ class RepositoryDataStorage(ABC):
     def store_commit(self, repo_name, commit: Commit):
         pass
 
+    @abstractmethod
+    def store_developer(self, developer):
+        pass
+
     # @abstractmethod
     # def store_modification(self, commit, modification):
     #     pass
+
 
 class RepositoryNeo4jStorage(RepositoryDataStorage):
 
@@ -54,10 +59,18 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
 
     def _create_indexes_and_constraints(self):
         with self.driver.session() as session:
-            session.run("CREATE CONSTRAINT IF NOT EXISTS FOR (r:Repository) REQUIRE r.name IS UNIQUE")
-            session.run("CREATE CONSTRAINT IF NOT EXISTS FOR (b:Branch) REQUIRE b.name IS UNIQUE")
-            session.run("CREATE CONSTRAINT IF NOT EXISTS FOR (d:Developer) REQUIRE d.email IS UNIQUE")
-            session.run("CREATE CONSTRAINT IF NOT EXISTS FOR (c:Commit) REQUIRE c.hash IS UNIQUE")
+            session.run(
+                "CREATE CONSTRAINT IF NOT EXISTS FOR (r:Repository) REQUIRE r.name IS UNIQUE"
+            )
+            session.run(
+                "CREATE CONSTRAINT IF NOT EXISTS FOR (b:Branch) REQUIRE b.name IS UNIQUE"
+            )
+            session.run(
+                "CREATE CONSTRAINT IF NOT EXISTS FOR (d:Developer) REQUIRE d.email IS UNIQUE"
+            )
+            session.run(
+                "CREATE CONSTRAINT IF NOT EXISTS FOR (c:Commit) REQUIRE c.hash IS UNIQUE"
+            )
 
     def _add_to_batch(self, query, parameters):
         self.batch.append((query, parameters))
@@ -86,60 +99,59 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
             },
         )
 
-    def store_developer(self, author):
-        # Store the developer information
+    def store_developer(self, developer):
+        # Store the information for a developer.
         self._add_to_batch(
             "MERGE (d:Developer {email: $email}) " "SET d.name = $name",
             {
-                "email": author.email,
-                "name": author.name,
+                "email": developer.email,
+                "name": developer.name,
             },
         )
 
     def store_commit(self, repo_name, commit: Commit):
-        with self.driver.session() as session:
-            self.store_developer(commit.author)
+        # Stores an instance of a commit and links it to the author.
+        self._add_to_batch(
+            "MATCH (d:Developer {email: $email}) "
+            "MERGE (c:Commit {hash: $hash}) "
+            "MERGE (c)-[:AUTHOR]->(d) "
+            "SET c.message = $message, c.author = $author, c.date = $date,"
+            "c.dmm_unit_size = $dmm_unit_size, c.dmm_unit_complexity = $dmm_unit_complexity, "
+            "c.dmm_unit_interfacing = $dmm_unit_interfacing, c.is_merge = $merge",
+            {
+                "hash": commit.hash,
+                "email": commit.author.email,
+                "message": commit.msg,
+                "author": commit.author.name,
+                "date": commit.author_date.strftime("%Y-%m-%d %H:%M:%S"),
+                "dmm_unit_size": commit.dmm_unit_size,
+                "dmm_unit_complexity": commit.dmm_unit_complexity,
+                "dmm_unit_interfacing": commit.dmm_unit_interfacing,
+                "merge": commit.merge,
+            },
+        )
 
+        # Linking the commit to it's parent (if it exists)
+        for parent_hash in commit.parents:
             self._add_to_batch(
-                "MATCH (d:Developer {email: $email})  "
-                "MERGE (c)-[:AUTHOR]->(d) "
-                "SET c.message = $message, c.author = $author, c.date = $date,"
-                "c.dmm_unit_size = $dmm_unit_size, c.dmm_unit_complexity = $dmm_unit_complexity, "
-                "c.dmm_unit_interfacing = $dmm_unit_interfacing, c.is_merge = $merge",
+                "MATCH (c:Commit {hash: $hash}), (p:Commit {hash: $parent_hash}) "
+                "MERGE (c)-[:PARENT]->(p)",
                 {
-                    "email": commit.author.email,
-                    "message": commit.msg,
-                    "author": commit.author.name,
-                    "date": commit.author_date.strftime("%Y-%m-%d %H:%M:%S"),
-                    "dmm_unit_size": commit.dmm_unit_size,
-                    "dmm_unit_complexity": commit.dmm_unit_complexity,
-                    "dmm_unit_interfacing": commit.dmm_unit_interfacing,
-                    "merge": commit.merge,
+                    "hash": commit.hash,
+                    "parent_hash": parent_hash,
                 },
             )
 
-            for branch in commit.branches:
-                self.store_branch(repo_name, branch)
-
-                self._add_to_batch(
-                    "MATCH (b:Branch {name: $branch_name}), (c:Commit {hash: $hash})"
-                    "MERGE (c)-[:IN_BRANCH]->(b)",
-                    {
-                        "branch_name": branch,
-                        "hash": commit.hash,
-                    },
-                )
-
-                # Link the commit to its parent commits
-            for parent_hash in commit.parents:
-                self._add_to_batch(
-                    "MATCH (c:Commit {hash: $hash}), (p:Commit {hash: $parent_hash}) "
-                    "MERGE (c)-[:PARENT]->(p)",
-                    {
-                        "hash": commit.hash,
-                        "parent_hash": parent_hash,
-                    },
-                )
+        # Linking the commit to it's branch
+        for branch in commit.branches:
+            self._add_to_batch(
+                "MATCH (b:Branch {name: $branch_name}), (c:Commit {hash: $hash})"
+                "MERGE (c)-[:IN_BRANCH]->(b)",
+                {
+                    "branch_name": branch,
+                    "hash": commit.hash,
+                },
+            )
 
 
 class LogRepositoryStorage(RepositoryDataStorage):
@@ -171,23 +183,31 @@ class LogRepositoryStorage(RepositoryDataStorage):
 
 class RepositoryDriller:
     """A GraphRepo Driller that takes configs from config objects."""
-    
-    
 
     def __init__(self, repository_path, storage: RepositoryDataStorage):
         self.repository_path = repository_path
         self.repository_name = self.repository_path.split("/")[-1]
         self.storage = storage
 
-    def get_commits(self, pydriller_filters = {}):
+    def get_commits(self, pydriller_filters={}):
         return Repository(self.repository_path, **pydriller_filters).traverse_commits()
 
-    def drill_commits(self, filter_configs : dict = {}, pydriller_filters = {}):
+    def _handle_branches(self, branch_names):
+        for b in branch_names:
+            self.storage.store_branch(self.repository_name, b)
+        
+    def _handle_committer(self, committer):
+        self.storage.store_developer(committer)
+
+    def drill_commits(self, filter_configs: dict = {}, pydriller_filters={}):
         for commit in self.get_commits(pydriller_filters):
             if self.commit_filter(commit, filter_configs):
+                self._handle_branches(commit.branches)
+                self._handle_committer(commit.author)
+
                 self.storage.store_commit(self.repository_name, commit)
-            
-    def commit_filter(self, commit, filter_configs : list[dict]) -> bool:
+
+    def commit_filter(self, commit, filter_configs: list[dict]) -> bool:
         """Used to determine whether a commit should be inserted into the database
 
         Args:
@@ -196,22 +216,31 @@ class RepositoryDriller:
         Returns:
             bool: whether it should be inserted. If True, commit inserted into storage.
         """
-        
+
         for item in filter_configs:
             field = item.get("field")
             filter_value = item.get("value")
             method = item.get("method", "exact")
-            
-            if method == "exact" and getattr(commit, field, f"`{field}` not in Commit.") != filter_value:
+
+            if (
+                method == "exact"
+                and getattr(commit, field, f"`{field}` not in Commit.") != filter_value
+            ):
                 return False
-            elif method == "!exact" and getattr(commit, field, f"`{field}` not in Commit.") == filter_value:
+            elif (
+                method == "!exact"
+                and getattr(commit, field, f"`{field}` not in Commit.") == filter_value
+            ):
                 return False
-            elif method == "contains" and filter_value not in getattr(commit, field, f"`{field}` not in Commit."):
+            elif method == "contains" and filter_value not in getattr(
+                commit, field, f"`{field}` not in Commit."
+            ):
                 return False
-            elif method == "!contains" and filter_value in getattr(commit, field, f"`{field}` not in Commit."):
+            elif method == "!contains" and filter_value in getattr(
+                commit, field, f"`{field}` not in Commit."
+            ):
                 return False
         return True
-            
 
     def drill_repository(self):
         self.storage.store_repository(self.repository_name)

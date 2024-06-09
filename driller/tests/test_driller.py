@@ -53,6 +53,9 @@ class TestStorage(RepositoryDataStorage):
 
     def store_commit(self, repo_name, commit):
         pass
+    
+    def store_developer(self, developer):
+        pass
 
 
 def test_commit_exact_filter():
