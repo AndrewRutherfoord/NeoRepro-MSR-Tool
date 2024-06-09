@@ -14,7 +14,7 @@ AUTH = ("neo4j", "neo4j123")
 logger = logging.getLogger(__name__)
 
 
-class DataStorage(ABC):
+class RepositoryDataStorage(ABC):
     @abstractmethod
     def store_repository(self, repo_name):
         pass
@@ -31,8 +31,7 @@ class DataStorage(ABC):
     # def store_modification(self, commit, modification):
     #     pass
 
-
-class Neo4jStorage(DataStorage):
+class RepositoryNeo4jStorage(RepositoryDataStorage):
 
     def __init__(
         self,
@@ -143,7 +142,7 @@ class Neo4jStorage(DataStorage):
                 )
 
 
-class LogStorage(DataStorage):
+class LogRepositoryStorage(RepositoryDataStorage):
 
     def __init__(self):
         pass
@@ -172,18 +171,47 @@ class LogStorage(DataStorage):
 
 class RepositoryDriller:
     """A GraphRepo Driller that takes configs from config objects."""
+    
+    
 
-    def __init__(self, repository_path, storage: DataStorage):
+    def __init__(self, repository_path, storage: RepositoryDataStorage):
         self.repository_path = repository_path
         self.repository_name = self.repository_path.split("/")[-1]
         self.storage = storage
 
-    def get_commits(self, **kwargs):
-        return Repository(self.repository_path, **kwargs).traverse_commits()
+    def get_commits(self, pydriller_filters = {}):
+        return Repository(self.repository_path, **pydriller_filters).traverse_commits()
 
-    def drill_commits(self, **kwargs):
-        for commit in self.get_commits(**kwargs):
-            self.storage.store_commit(self.repository_name, commit)
+    def drill_commits(self, filter_configs : dict = {}, pydriller_filters = {}):
+        for commit in self.get_commits(pydriller_filters):
+            if self.commit_filter(commit, filter_configs):
+                self.storage.store_commit(self.repository_name, commit)
+            
+    def commit_filter(self, commit, filter_configs : list[dict]) -> bool:
+        """Used to determine whether a commit should be inserted into the database
+
+        Args:
+            commit (Commit): PyDriller Commit instance.
+
+        Returns:
+            bool: whether it should be inserted. If True, commit inserted into storage.
+        """
+        
+        for item in filter_configs:
+            field = item.get("field")
+            filter_value = item.get("value")
+            method = item.get("method", "exact")
+            
+            if method == "exact" and getattr(commit, field, f"`{field}` not in Commit.") != filter_value:
+                return False
+            elif method == "!exact" and getattr(commit, field, f"`{field}` not in Commit.") == filter_value:
+                return False
+            elif method == "contains" and filter_value not in getattr(commit, field, f"`{field}` not in Commit."):
+                return False
+            elif method == "!contains" and filter_value in getattr(commit, field, f"`{field}` not in Commit."):
+                return False
+        return True
+            
 
     def drill_repository(self):
         self.storage.store_repository(self.repository_name)

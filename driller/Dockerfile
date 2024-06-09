@@ -22,7 +22,6 @@ COPY ./GraphRepo /app/GraphRepo
 
 RUN poetry install && rm -rf $POETRY_CACHE_DIR
 
-COPY ./driller/pytest.ini ./
 COPY ./driller/driller ./driller
 COPY ./driller/tests ./tests
 
