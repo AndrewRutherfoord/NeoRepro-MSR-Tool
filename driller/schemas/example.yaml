@@ -1,0 +1,31 @@
+
+defaults:
+  delete_clone: false
+  index_file_modifications: False
+  pydriller: # Configuration of pydriller directly.
+    since: <A Date string>
+    from_commit: <some str>
+    from_tag: <some str>
+    to: <A Date string>
+    to_commit: <some str>
+    to_tag: <some str>
+    only_in_branch: <some str>
+    only_no_merge: true
+    only_authors: 
+      - dev
+    only_commits: 
+      - some string
+    only_release: true
+    filepath: <some filepath>
+    only_modifications_with_file_types: 
+      - ".yaml"
+  filters: 
+    commit: # siblings in list behave as AND
+      - field: 'msg'
+        value: 'Update' # List or single string. Behaves as logical OR
+        method: 'exact' # can be exact, !exact, contains !contains
+
+repositories:
+  - name: 'pydriller'
+    url: https://github.com/ishepard/pydriller.git
+

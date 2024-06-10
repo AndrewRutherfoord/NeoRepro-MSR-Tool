@@ -261,7 +261,7 @@ class RepositoryDriller:
         """
         for commit in self.get_commits(pydriller_filters):
             if self.commit_filter(commit, filters):
-                logger.info("Drilling Commit")
+                # logger.info("Drilling Commit")
                 self._handle_branches(commit.branches)
                 self._handle_committer(commit.author)
 
@@ -287,14 +287,24 @@ class RepositoryDriller:
 
             value = getattr(commit, field, f"`{field}` not in Commit.")
 
-            if method == "exact" and value != filter_value:
-                return False
-            elif method == "!exact" and value == filter_value:
-                return False
-            elif method == "contains" and filter_value not in value:
-                return False
-            elif method == "!contains" and filter_value in value:
-                return False
+            if isinstance(filter_value, list):
+                if method == "exact" and not any(fv == value for fv in filter_value):
+                    return False
+                elif method == "!exact" and any(fv == value for fv in filter_value):
+                    return False
+                elif method == "contains" and not any(fv in value for fv in filter_value):
+                    return False
+                elif method == "!contains" and any(fv in value for fv in filter_value):
+                    return False
+            else:
+                if method == "exact" and value != filter_value:
+                    return False
+                elif method == "!exact" and value == filter_value:
+                    return False
+                elif method == "contains" and filter_value not in value:
+                    return False
+                elif method == "!contains" and filter_value in value:
+                    return False
 
         return True
 

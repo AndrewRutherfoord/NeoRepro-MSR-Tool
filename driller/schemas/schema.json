@@ -93,7 +93,7 @@
                 "type": "string",
                 "description": "The field on the object to be filtered. Eg. `msg` for commit message. "
               },
-              "filter_value": {
+              "value": {
                 "description": "String or list of strings to be found in field. Behaves as an OR when a list is provided. True if any of the strings found.",
                 "oneOf": [
                   { "type": "string" },
