@@ -29,6 +29,7 @@
     "js-yaml": "^4.1.0",
     "monaco-editor": "^0.48.0",
     "monaco-yaml": "^5.1.1",
+    "neo4j-driver": "^5.21.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.21",
     "vue-monaco": "^1.2.2",

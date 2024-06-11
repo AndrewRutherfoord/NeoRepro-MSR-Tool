@@ -8,10 +8,11 @@ import { Notifications } from '@kyvg/vue3-notification';
   <v-card>
     <v-layout>
       <SidebarNav></SidebarNav>
-      <v-main height="100vh">
+      <v-main min-height="100vh">
         <RouterView />
       </v-main>
+
     </v-layout>
   </v-card>
   <Notifications />
-</template> 
+</template>
