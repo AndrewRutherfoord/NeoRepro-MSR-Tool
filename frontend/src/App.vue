@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import SidebarNav from './components/SidebarNav.vue'
+import Toast from 'primevue/toast';
 
 const sidebar = ref(
   {
@@ -18,5 +19,6 @@ const sidebar = ref(
       :style="{ 'flex-shrink': '1', 'flex-basis': `calc(100% - ${sidebar.width})` }">
       <RouterView :key="sidebar.width" /> <!-- Force re-render on width change. -->
     </main>
+    <Toast position="bottom-right" />
   </div>
 </template>

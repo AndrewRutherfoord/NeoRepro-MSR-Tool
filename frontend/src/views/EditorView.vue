@@ -1,31 +1,61 @@
 <script setup lang="ts">
-// import { ref, onMounted } from 'vue'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import Editor from '../components/Editor.vue'
-// import Editor2 from '../components/Editor2.vue'
 import yaml from 'js-yaml';
-import initial from '../assets/initial.yaml?raw'
 import { onBeforeRouteLeave } from 'vue-router'
 import axios from "axios";
+import Ajv from 'ajv';
+import addFormats from "ajv-formats"
+
+import initial from '../assets/initial.yaml?raw'
+// Fetch the schema from the root of the repository.
+import schema from '../../../schemas/schema.json?raw'
+import { useToast } from '../composables/useToast';
+import Editor from '../components/Editor.vue'
+
+const toast = useToast();
+
 const confirmLeaveMessage = "You have unsaved changes. Are you sure you want to leave ?";
 
 const content = ref("// Some code");
 const unsavedChanges = ref(false);
 
-function parseYaml(data) {
-  return yaml.load(data);
-}
-
 async function executeDrillJob() {
-  let jobs = parseYaml(content.value)
+  let configuration = yaml.load(content.value)
+
+  const ajv = new Ajv();
+  // Add formats extension to be able to check date formats
+  addFormats(ajv)
 
   try {
-    let response = axios.post("http://127.0.0.1:8000/jobs/", jobs)
+
+    const isValid = ajv.validate(JSON.parse(schema), configuration)
+    if (!isValid) {
+      let item = ajv.errors?.pop()
+      let message = "";
+      console.error(ajv.errorsText())
+      if (item?.params && item.params?.format === "date") {
+        // For date fields, inform the user of the format that is expected.
+        message = "Date format must match YYYY-MM-DD."
+      } else {
+        message = item?.message ? item.message : ":/";
+      }
+      toast.error("Configuration Invalid.", `Error at '${item?.instancePath}': ${message}\n`)
+      return
+    }
+  } catch (e) {
+    toast.error("Could not parse configuration.")
+
+    console.error(e)
+  }
+  toast.success("Configuration Valid.")
+
+  try {
+    let response = axios.post("http://127.0.0.1:8000/jobs/", configuration)
     console.log(response)
   } catch (e) {
     console.error(e)
   }
-  console.log(jobs)
+  console.log(configuration)
 
 }
 
@@ -95,5 +125,4 @@ onBeforeRouteLeave(() => {
     <h3>Editor</h3>
   </header> -->
   <Editor v-model="content"></Editor>
-  <!-- <Editor></Editor> -->
 </template>

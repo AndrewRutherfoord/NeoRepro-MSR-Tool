@@ -8,6 +8,10 @@ import router from './router'
 
 import { install as VueMonacoEditorPlugin } from '@guolao/vue-monaco-editor'
 
+import PrimeVue from 'primevue/config';
+import ToastService from 'primevue/toastservice';
+import 'primevue/resources/themes/aura-light-green/theme.css'
+
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap'
 import 'bootstrap-icons/font/bootstrap-icons.css'
@@ -27,4 +31,8 @@ app.use(VueMonacoEditorPlugin, {
     vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs'
   }
 })
+
+app.use(PrimeVue);
+app.use(ToastService);
+
 app.mount('#app')

@@ -20,6 +20,8 @@
     "@vueuse/core": "^10.10.0",
     "@vueuse/integrations": "^10.10.0",
     "D": "^1.0.0",
+    "ajv": "^8.16.0",
+    "ajv-formats": "^3.0.1",
     "axios": "^1.7.2",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
@@ -29,6 +31,7 @@
     "pinia": "^2.1.7",
     "primevue": "^3.52.0",
     "vue": "^3.4.21",
+    "vue-monaco": "^1.2.2",
     "vue-router": "^4.3.0"
   },
   "devDependencies": {
