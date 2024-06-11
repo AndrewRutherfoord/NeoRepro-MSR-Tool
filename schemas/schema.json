@@ -62,10 +62,10 @@
       "type": "object",
       "description": "Use the pydriller builtin filters. Pydriller Reference: https://pydriller.readthedocs.io/en/latest/repository.html",
       "properties": {
-        "since": { "type": "string", "format": "date-time" },
+        "since": { "type": "string", "format": "date" },
         "from_commit": { "type": "string" },
         "from_tag": { "type": "string" },
-        "to": { "type": "string", "format": "date-time" },
+        "to": { "type": "string", "format": "date" },
         "to_commit": { "type": "string" },
         "to_tag": { "type": "string" },
         "only_in_branch": { "type": "string" },

@@ -27,13 +27,14 @@ async function executeDrillJob() {
   addFormats(ajv)
 
   try {
-
+    // Check if input matches schema
     const isValid = ajv.validate(JSON.parse(schema), configuration)
+    
     if (!isValid) {
       let item = ajv.errors?.pop()
       let message = "";
-      console.error(ajv.errorsText())
-      if (item?.params && item.params?.format === "date") {
+      console.error(item)
+      if (item?.params?.format === "date") {
         // For date fields, inform the user of the format that is expected.
         message = "Date format must match YYYY-MM-DD."
       } else {

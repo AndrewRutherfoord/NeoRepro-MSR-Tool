@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from enum import Enum
 import json
 
 from fastapi import (
@@ -34,49 +35,67 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-class ProjectConfigDefaults(BaseModel):
-    start_date: str
-    end_date: str
-    index_code: bool
-    index_developer_email: bool
+class PydrillerConfig(BaseModel):
+    since: str = None
+    from_commit: str = None
+    from_tag: str = None
+    to: str = None
+    to_commit: str = None
+    to_tag: str = None
+    only_in_branch: str = None
+    only_no_merge: bool = False
+    only_authors: list[str] = None
+    only_commits: list[str] = None
+    only_release: bool = False
+    filepath: str = None
+    only_modifications_with_file_types: list[str] = None
 
 
-class ProjectConfig(BaseModel):
-    project_id: str
-    repo: str
+class FilterMethod(str, Enum):
+    exact = "exact"
+    not_exact = "!exact"
+    contains = "contains"
+    not_contains = "!contains"
+
+
+# class CustomJSONEncoder(json.JSONEncoder):
+#     def default(self, obj):
+#         if isinstance(obj, Enum):
+#             return obj.value
+#         return super().default(obj)
+
+
+class Filter(BaseModel):
+    field: str
+    value: str
+    method: FilterMethod = FilterMethod.contains
+
+    class Config:
+        use_enum_values = True
+
+
+class FiltersConfig(BaseModel):
+    commit: list[Filter] = None
+
+
+class DefaultsConfig(BaseModel):
+    delete_clone: bool = False
+    index_file_modifications: bool = False
+    pydriller_filters: PydrillerConfig = None
+    filters: FiltersConfig = None
+
+
+class RepositoryConfig(DefaultsConfig):
+    name: str
     url: str = None
 
-    start_date: str = None
-    end_date: str = None
-    index_code: bool = False
-    index_developer_email: bool = False
+    delete_clone: bool = None
+    index_file_modifications: bool = None
 
 
-class RepositoriesConfig(BaseModel):
-    defaults: ProjectConfigDefaults
-    projects: list[ProjectConfig]
-
-
-class NeoConfig(BaseModel):
-    db_url: str
-    port: int
-    db_user: str
-    db_pwd: str
-    batch_size: int
-
-
-class JobConfigs(BaseModel):
-    neo: NeoConfig = None  # optional. Can be filled from env vars in worker.
-    repositories: RepositoriesConfig
-
-
-def apply_defaults(
-    defaults: ProjectConfigDefaults, projects: list[ProjectConfig]
-) -> dict:
-    results = []
-    for i in range(len(projects)):
-        results.append(defaults.__dict__ | projects[i].__dict__)
-    return results
+class DrillConfig(BaseModel):
+    defaults: DefaultsConfig
+    repositories: list[RepositoryConfig]
 
 
 def get_job_status(session: Session, job_id: int):
@@ -111,7 +130,11 @@ def list_jobs(
         job, latest_status = item if item else (None, None)
         if job is None:
             return JSONResponse(status_code=404, content={"error": "Job not found"})
-        items.append(JobList(id=job.id, name=job.name, data=job.data, status=latest_status.status))
+        items.append(
+            JobList(
+                id=job.id, name=job.name, data=job.data, status=latest_status.status
+            )
+        )
     # job = result[0]
     # latest_status = result[1]
 
@@ -126,6 +149,7 @@ def delete_job(*, session: Session = Depends(get_session), job_id: int):
     session.delete(job)
     session.commit()
     return Response(status_code=200)
+
 
 @router.delete("/jobs/")
 def delete_all_jobs(*, session: Session = Depends(get_session)):
@@ -170,44 +194,49 @@ def detail_job_status(*, session: Session = Depends(get_session), job_status_id:
     return job_status
 
 
-@router.post("/jobs/")
+@router.post("/jobs/", response_model=list[JobList])
 async def create_job(
     *,
     session: Session = Depends(get_session),
-    jobs: JobConfigs,
+    drill_config: DrillConfig,
     background_tasks: BackgroundTasks,
     request: Request
 ):
-    projects: dict = apply_defaults(
-        jobs.repositories.defaults, jobs.repositories.projects
-    )
+    drill_config_dict = drill_config.model_dump()
     jobs_list = []
-    for project in projects:
-        logger.warning(project)
+    for repo_config in drill_config_dict["repositories"]:
+        logger.warning(repo_config)
+        # job_dict = {
+        #     "defaults": drill_config.defaults.model_dump_json(),
+        #     "repository": repo_config.model_dump_json(),
+        # }
         job_dict = {
-            "project": project,
-            "neo": jobs.neo.__dict__ if jobs.neo is not None else None,
+            "defaults": drill_config_dict["defaults"],
+            "repository": repo_config,
         }
 
-        db_job = Job.model_validate(JobCreate(name=project["project_id"], data=job_dict))
+        db_job = Job.model_validate(JobCreate(name=repo_config["name"], data=job_dict))
 
         session.add(db_job)
         session.commit()
         session.refresh(db_job)
-        jobs_list.append(db_job)
 
         db_job_status = JobStatus(job_id=db_job.id)
         session.add(db_job_status)
         session.commit()
         session.refresh(db_job_status)
+
         # background_tasks.add_task(
         #     request.state.driller_client.call,
-        #     json.dumps(
-        #         {
-        #             "project": project,
-        #             "neo": jobs.neo.__dict__ if jobs.neo is not None else None,
-        #         }
-        #     ),
+        #     json.dumps(job_dict),
         # )
+
+        job, status = get_job_status(session, db_job.id)
+
+        jobs_list.append(
+            JobList(id=job.id, name=job.name, data=job.data, status=status.status)
+        )
+
     # result = await driller_client.call(body)
-    return Response("", status_code=201)
+    return jobs_list
+    # return Response(jobs_list, status_code=201)

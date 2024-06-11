@@ -1,7 +1,8 @@
 from datetime import datetime
 from enum import Enum
+import json
 import logging
-from typing import Optional
+from typing import Optional, Type
 import sqlalchemy as sa
 from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy_utils import ChoiceType
