@@ -1,46 +1,67 @@
+<!-- eslint-disable vue/valid-v-slot -->
 <template>
-    <div class="container-fluid mt-2">
-        <h2>Jobs</h2>
-        <hr>
-        <div class="d-flex justify-content-center" v-if="isLoading">
-            <div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </div>
-        <p v-else-if="data.length === 0">
-            No jobs available...
-        </p>
-        <div v-else class="accordion" id="accordionPanelsStayOpenExample">
-            <div class="accordion-item" v-for="(job, index) in data" :key="job.id">
-                <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                        :data-bs-target="`#job-${index}-details`" aria-expanded="false"
-                        :aria-controls="`job-${index}-details`">
-                        {{ job.name }} ({{ job.status }})
-                    </button>
-                </h2>
-                <div :id="`job-${index}-details`" class="accordion-collapse collapse">
-                    <div class="accordion-body">
-                        <h6>Job Configuration:</h6>
-                        <code>
-                    <pre>{{ prettyJSON(job.data) }}</pre>
-                </code>
-                        <hr>
-                        <button class="btn btn-danger btn-sm" @click="deleteJob(job.id)">Delete</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- <div class="container-fluid mt-2"> -->
+    <v-app-bar>
+        <v-app-bar-title>Jobs</v-app-bar-title>
+    </v-app-bar>
+
+
+    <v-data-table :items="data" :loading="isLoading" :headers="headers" show-select v-model="selected"
+        hide-default-footer>
+        <template v-slot:item.status="{ value }">
+            <v-chip class="ma-2 text-capitalize" variant="elevated" compact :color="getStatusChipColor(value)">
+                {{ value }}
+            </v-chip>
+        </template>
+        <template v-slot:item.button="{ item }">
+            <v-btn color="primary" size="small" class="mx-2" @click="showDialog(item)">View</v-btn>
+            <v-btn color="red-darken-2" size="small" class="mx-2" @click="deleteJob(item.id)">Delete</v-btn>
+        </template>
+    </v-data-table>
+
+
+    <v-dialog v-model="dialog" width="700px">
+        <v-card prepend-icon="mdi-update" title="Update in progress">
+            <v-card-text>
+                <h6>Job Configuration:</h6>
+                <code class="text-red">
+                <pre>{{ prettyJSON(dialogItem.data) }}</pre>
+            </code>
+            </v-card-text>
+            <template v-slot:actions>
+                <v-btn class="ms-auto" text="Ok" @click="dialog = false"></v-btn>
+            </template>
+        </v-card>
+    </v-dialog>
 </template>
 
 <script setup lang="ts">
 import axios from 'axios';
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useAxios } from '@vueuse/integrations/useAxios'
 import yaml from 'js-yaml';
 
 const { data, isFinished, isLoading, execute } = useAxios('/jobs/', axios)
+
+const selected = ref([])
+
+const headers = [
+    { title: 'ID', value: 'id' },
+    { title: 'Job Name', value: 'name' },
+    { title: 'Status', key: 'status' },
+    {
+        title: '',
+        key: 'button',
+    }
+]
+
+const dialog = ref(false);
+const dialogItem = ref();
+
+function showDialog(item) {
+    dialogItem.value = item;
+    dialog.value = true;
+}
 
 function prettyJSON(value: string) {
     //   return JSON.stringify(value, null, 2);
@@ -48,11 +69,28 @@ function prettyJSON(value: string) {
 }
 
 async function deleteJob(id: number) {
-    try {
-        await axios.delete(`/jobs/${id}/`)
-        execute();
-    } catch (e) {
-        console.error(e)
+    let ok = confirm("Are you sure you want to delete this job? (This will only delete the info from the database. It will not undo the work.)")
+    if (ok) {
+
+        try {
+            await axios.delete(`/jobs/${id}/`)
+            execute();
+        } catch (e) {
+            console.error(e)
+        }
+    }
+}
+
+
+function getStatusChipColor(status: string) {
+    switch (status) {
+        case 'pending':
+            return 'amber-lighten-1'
+        case 'complete':
+            return 'green'
+
+        default:
+            return "secondary";
     }
 }
 

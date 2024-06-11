@@ -1,3 +1,19 @@
+<template>
+  <v-sheet height="100vh">
+    <v-app-bar>
+      <v-app-bar-title>Editor</v-app-bar-title>
+      <template v-slot:append>
+        <v-btn variant="outlined" @click="executeDrillJob">Execute
+          Drill Job</v-btn>
+
+      </template>
+    </v-app-bar>
+
+    <Editor v-model="content"></Editor>
+  </v-sheet>
+</template>
+
+
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import yaml from 'js-yaml';
@@ -29,7 +45,7 @@ async function executeDrillJob() {
   try {
     // Check if input matches schema
     const isValid = ajv.validate(JSON.parse(schema), configuration)
-    
+
     if (!isValid) {
       let item = ajv.errors?.pop()
       let message = "";
@@ -45,14 +61,12 @@ async function executeDrillJob() {
     }
   } catch (e) {
     toast.error("Could not parse configuration.")
-
     console.error(e)
   }
-  toast.success("Configuration Valid.")
 
   try {
     let response = axios.post("http://127.0.0.1:8000/jobs/", configuration)
-    console.log(response)
+    toast.success("Configuration Valid.")
   } catch (e) {
     console.error(e)
   }
@@ -76,7 +90,7 @@ function confirmLeave() {
   return true;
 }
 
-function beforeReload(event) {
+function beforeReload(event: { returnValue: string; }) {
   // You can perform some cleanup here
   // To show a confirmation dialog:
   if (unsavedChanges.value) {
@@ -105,25 +119,3 @@ onBeforeRouteLeave(() => {
 })
 
 </script>
-
-<template>
-  <nav class="navbar navbar-expand-lg bg-light">
-    <div class="container-fluid">
-      <div class="collapse navbar-collapse" id="navbarText">
-        <div class="me-auto">
-          <h2>Editor</h2>
-        </div>
-        <div class="navbar">
-          <button class="btn btn-outline-success me-2" type="button" @click="executeDrillJob">Execute
-            Drill Job</button>
-        </div>
-      </div>
-    </div>
-  </nav>
-
-
-  <!-- <header class="px-3 pb-1 pt-2 d-flex justify-content-between align-items-center">
-    <h3>Editor</h3>
-  </header> -->
-  <Editor v-model="content"></Editor>
-</template>

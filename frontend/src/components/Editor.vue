@@ -1,5 +1,5 @@
 <template>
-  <vue-monaco-editor class="h-100" v-model:value="code" theme="vs-dark" :language="language"
+  <vue-monaco-editor class="h-100" v-model:value="code" :theme="getEditorTheme()" :language="language"
     :options="MONACO_EDITOR_OPTIONS" @mount="handleMount" />
 </template>
 
@@ -7,6 +7,9 @@
 import { useMagicKeys, whenever } from '@vueuse/core';
 import type { languages } from 'monaco-editor';
 import { ref, shallowRef, onMounted, onUnmounted } from 'vue'
+import { useTheme } from 'vuetify'
+
+const theme = useTheme()
 
 const props = defineProps(
   {
@@ -49,4 +52,13 @@ function formatCode() {
   console.log("Format")
   editorRef.value?.getAction('editor.action.formatDocument').run()
 }
+
+function getEditorTheme() {
+  if (theme.global.current.value.dark) {
+    return 'vs-dark'
+  } else {
+    return 'vs-light'
+  }
+}
+
 </script>

@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@guolao/vue-monaco-editor": "^1.5.1",
-    "@popperjs/core": "^2.11.8",
-    "@types/bootstrap": "^5.2.10",
+    "@kyvg/vue3-notification": "^3.2.1",
+    "@mdi/font": "^7.4.47",
     "@types/js-yaml": "^4.0.9",
     "@vueuse/core": "^10.10.0",
     "@vueuse/integrations": "^10.10.0",
@@ -23,16 +23,14 @@
     "ajv": "^8.16.0",
     "ajv-formats": "^3.0.1",
     "axios": "^1.7.2",
-    "bootstrap": "^5.3.3",
-    "bootstrap-icons": "^1.11.3",
     "js-yaml": "^4.1.0",
     "monaco-editor": "^0.48.0",
     "monaco-yaml": "^5.1.1",
     "pinia": "^2.1.7",
-    "primevue": "^3.52.0",
     "vue": "^3.4.21",
     "vue-monaco": "^1.2.2",
-    "vue-router": "^4.3.0"
+    "vue-router": "^4.3.0",
+    "vuetify": "^3.6.8"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.8.0",

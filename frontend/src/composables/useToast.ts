@@ -1,12 +1,22 @@
-import { useToast as usePrimeToast } from 'primevue/usetoast'
+import { notify } from '@kyvg/vue3-notification'
 
 type severity = 'success' | 'info' | 'warn' | 'error' | 'secondary' | 'contrast'
 
 export function useToast() {
-  const toast = usePrimeToast()
-
-  function add(severity: severity, summary: string, detail: string | undefined = undefined, life : number = 3000) {
-    toast.add({ severity: severity, summary: summary, detail: detail, life: life })
+  function add(
+    severity: severity,
+    summary: string,
+    detail: string | undefined = undefined,
+    life: number = 3000
+  ) {
+    notify({
+      title: summary,
+      text: detail,
+      type: severity,
+      duration: life,
+      data: {}
+    })
+    // toast.add({ severity: severity, summary: summary, detail: detail, life: life })
   }
 
   function success(summary: string, detail: string | undefined = undefined) {

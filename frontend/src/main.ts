@@ -8,16 +8,17 @@ import router from './router'
 
 import { install as VueMonacoEditorPlugin } from '@guolao/vue-monaco-editor'
 
-import PrimeVue from 'primevue/config';
-import ToastService from 'primevue/toastservice';
-import 'primevue/resources/themes/aura-light-green/theme.css'
+// Vuetify
+import 'vuetify/styles'
+import '@mdi/font/css/materialdesignicons.css'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
 
-import 'bootstrap/dist/css/bootstrap.min.css'
-import 'bootstrap'
-import 'bootstrap-icons/font/bootstrap-icons.css'
-// import "bootstrap-icons"
+import Notifications from '@kyvg/vue3-notification'
 
 import axios from 'axios'
+
 
 axios.defaults.baseURL = 'http://127.0.0.1:8000/'
 
@@ -32,7 +33,14 @@ app.use(VueMonacoEditorPlugin, {
   }
 })
 
-app.use(PrimeVue);
-app.use(ToastService);
+const vuetify = createVuetify({
+  components,
+  directives,
+  theme: {
+    defaultTheme: 'dark'
+  }
+})
+app.use(vuetify)
+app.use(Notifications)
 
 app.mount('#app')
