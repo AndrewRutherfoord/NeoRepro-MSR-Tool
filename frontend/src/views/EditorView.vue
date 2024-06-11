@@ -5,7 +5,6 @@
       <template v-slot:append>
         <v-btn variant="outlined" @click="executeDrillJob">Execute
           Drill Job</v-btn>
-
       </template>
     </v-app-bar>
 

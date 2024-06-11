@@ -41,7 +41,7 @@ import { onMounted, ref } from 'vue'
 import { useAxios } from '@vueuse/integrations/useAxios'
 import yaml from 'js-yaml';
 
-const { data, isFinished, isLoading, execute } = useAxios('/jobs/', axios)
+const { data, isLoading, execute } = useAxios('/jobs/', axios)
 
 const selected = ref([])
 

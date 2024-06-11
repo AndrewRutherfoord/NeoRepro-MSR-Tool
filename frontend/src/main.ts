@@ -37,7 +37,7 @@ const vuetify = createVuetify({
   components,
   directives,
   theme: {
-    defaultTheme: 'dark'
+    defaultTheme: 'light'
   }
 })
 app.use(vuetify)
