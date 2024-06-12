@@ -43,10 +43,10 @@ class PydrillerConfig(BaseModel):
     to_commit: str = None
     to_tag: str = None
     only_in_branch: str = None
-    only_no_merge: bool = False
+    only_no_merge: bool = None
     only_authors: list[str] = None
     only_commits: list[str] = None
-    only_release: bool = False
+    only_release: bool = None
     filepath: str = None
     only_modifications_with_file_types: list[str] = None
 
@@ -81,7 +81,7 @@ class FiltersConfig(BaseModel):
 class DefaultsConfig(BaseModel):
     delete_clone: bool = False
     index_file_modifications: bool = False
-    pydriller_filters: PydrillerConfig = None
+    pydriller: PydrillerConfig = None
     filters: FiltersConfig = None
 
 
@@ -226,10 +226,10 @@ async def create_job(
         session.commit()
         session.refresh(db_job_status)
 
-        # background_tasks.add_task(
-        #     request.state.driller_client.call,
-        #     json.dumps(job_dict),
-        # )
+        background_tasks.add_task(
+            request.state.driller_client.call,
+            json.dumps(job_dict),
+        )
 
         job, status = get_job_status(session, db_job.id)
 

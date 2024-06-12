@@ -3,7 +3,8 @@
     <v-app-bar>
       <v-app-bar-title>Editor</v-app-bar-title>
       <template v-slot:append>
-        <v-btn class="mx-2" variant="outlined" color="green" @click="checkConfig" prepend-icon="mdi-check">Check Config</v-btn>
+        <v-btn class="mx-2" variant="outlined" color="green" @click="checkConfig" prepend-icon="mdi-check">Check
+          Config</v-btn>
         <v-btn variant="outlined" @click="executeDrillJob">Execute
           Drill Job</v-btn>
       </template>
@@ -35,7 +36,7 @@ const confirmLeaveMessage = "You have unsaved changes. Are you sure you want to 
 const content = ref("// Some code");
 const unsavedChanges = ref(false);
 
-async function checkConfig(createValidNotification = true) {
+function checkConfig(createValidNotification = true) {
   let configuration;
   try {
     configuration = yaml.load(content.value)
@@ -44,7 +45,7 @@ async function checkConfig(createValidNotification = true) {
     return false
   }
 
-  const ajv = new Ajv();
+  const ajv = new Ajv({ strictTypes: false });
   // Add formats extension to be able to check date formats
   addFormats(ajv)
 

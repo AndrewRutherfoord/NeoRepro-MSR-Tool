@@ -5,6 +5,7 @@ import logging
 import signal
 import sys
 
+from driller.drillers.storage import RepositoryNeo4jStorage
 from driller.settings.default import LOG_FORMAT, LOG_LEVEL, CONFIGS
 from driller.util import get_class
 
@@ -38,12 +39,21 @@ async def main():
     driller_class = get_class(CONFIGS.get("DRILLER_CLASS"))
     worker_class = get_class(CONFIGS.get("WORKER_CLASS"))
 
-    worker : QueueWorker = worker_class(host=PIKA_HOST, port=PIKA_PORT, queue=PIKA_QUEUE, driller_class=driller_class)
+    worker: QueueWorker = worker_class(
+        host=PIKA_HOST,
+        port=PIKA_PORT,
+        queue=PIKA_QUEUE,
+        driller_class=driller_class,
+        storage_class=RepositoryNeo4jStorage,
+        storage_args={"password": "neo4j123"},
+    )
     await worker.connect()
     await worker.consume_jobs()
 
+
 def exec():
     asyncio.run(main())
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -3,17 +3,16 @@ import logging
 
 from driller.drillers.driller import (
     RepositoryDataStorage,
-    LogRepositoryStorage,
-    RepositoryNeo4jStorage,
     RepositoryDriller,
 )
+from driller.drillers.storage import LogRepositoryStorage, RepositoryNeo4jStorage
 from pydriller import Commit
 
 logger = logging.getLogger(__name__)
 
 now = datetime.now()
 
-period = datetime(2023,1,1)
+period = datetime(2023, 1, 1)
 
 from driller.settings.default import NEO4J_HOST, NEO4J_PORT, NEO4J_USER, NEO4J_PASSWORD
 
@@ -52,7 +51,7 @@ class TestStorage(RepositoryDataStorage):
 
     def store_commit(self, repo_name, commit):
         pass
-    
+
     def store_developer(self, developer):
         pass
 
@@ -130,6 +129,7 @@ def test_commit_contains_filter():
         ],
     )
 
+
 # Tests the OR functionality with commit filters
 def test_commit_contains_list_filter():
     check_strs = ["Update", "docs"]
@@ -153,6 +153,7 @@ def test_commit_contains_list_filter():
             }
         ],
     )
+
 
 # Tests the AND functionality with commit filters
 def test_commit_contains_filter_AND():
@@ -179,6 +180,6 @@ def test_commit_contains_filter_AND():
                 "field": "msg",
                 "value": check_strs[1],
                 "method": "contains",
-            }
+            },
         ],
     )

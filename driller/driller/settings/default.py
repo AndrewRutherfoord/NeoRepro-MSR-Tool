@@ -1,7 +1,8 @@
 import logging
 import os
 
-DATE_FORMAT = "%d %B, %Y %H:%M"
+# DATE_FORMAT = "%d %B, %Y %H:%M"
+DATE_FORMAT = "%Y-%m-%d"
 
 PIKA_HOST = os.environ.get("PIKA_HOST")
 PIKA_PORT = os.environ.get("PIKA_PORT")
@@ -23,8 +24,8 @@ LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 REPO_CLONE_LOCATION = ""
 
 DEFAULT_CONFIGS = {
-    "DRILLER_CLASS": "driller.config_driller.ConfigDriller",
-    "WORKER_CLASS": "driller.workers.queue_driller_worker.QueueDrillerWorker"
+    "DRILLER_CLASS": "driller.drillers.driller.RepositoryDriller",
+    "WORKER_CLASS": "driller.workers.queue_driller_worker.QueueRepositoryNeo4jDrillerWorker"
 }
 
 CONFIGS = {**DEFAULT_CONFIGS}

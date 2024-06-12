@@ -14,5 +14,5 @@ import { Notifications } from '@kyvg/vue3-notification';
 
     </v-layout>
   </v-card>
-  <Notifications />
+  <Notifications class="ma-3" position="bottom right" />
 </template>

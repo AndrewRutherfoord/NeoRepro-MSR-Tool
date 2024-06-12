@@ -20,6 +20,11 @@ def get_class(class_path):
     # Get the class
     return getattr(module, class_name)
 
+def remove_none_values(d):
+    if not isinstance(d, dict):
+        return d
+    return {k: remove_none_values(v) for k, v in d.items() if v is not None}
+
 def load_yaml(path):
     with open(path, "r") as ymlfile:
         content = yaml.load(ymlfile, Loader=yaml.FullLoader)
