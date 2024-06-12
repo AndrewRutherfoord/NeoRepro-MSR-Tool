@@ -24,7 +24,8 @@ LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 REPO_CLONE_LOCATION = ""
 
 DEFAULT_CONFIGS = {
-    "DRILLER_CLASS": "driller.drillers.driller.RepositoryDriller",
+    "REPOSITORY_STORAGE_CLASS": "driller.drillers.storage.RepositoryNeo4jStorage",
+    "REPOSITORY_DRILLER_CLASS": "driller.drillers.driller.RepositoryDriller",
     "WORKER_CLASS": "driller.workers.queue_driller_worker.QueueRepositoryNeo4jDrillerWorker"
 }
 

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import hashlib
 import logging
 
 from neo4j import GraphDatabase
@@ -10,6 +11,7 @@ URI = "neo4j://localhost:7687"
 AUTH = ("neo4j", "neo4j123")
 
 logger = logging.getLogger(__name__)
+
 
 class RepositoryDataStorage(ABC):
     @abstractmethod
@@ -65,7 +67,7 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
                 "CREATE CONSTRAINT IF NOT EXISTS FOR (r:Repository) REQUIRE r.name IS UNIQUE"
             )
             session.run(
-                "CREATE CONSTRAINT IF NOT EXISTS FOR (b:Branch) REQUIRE (b.name, b.repository) IS UNIQUE"
+                "CREATE CONSTRAINT IF NOT EXISTS FOR (b:Branch) REQUIRE b.hash IS UNIQUE"
             )
             session.run(
                 "CREATE CONSTRAINT IF NOT EXISTS FOR (d:Developer) REQUIRE d.email IS UNIQUE"
@@ -101,8 +103,12 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
     def store_branch(self, repo_name, branch_name):
         self._add_to_batch(
             "MATCH (r:Repository {name: $repo_name}) "
-            "MERGE (b:Branch {name: $branch_name, repository: $repo_name })-[:PART_OF]->(r)",
+            "MERGE (b:Branch {hash: $branch_hash })-[:PART_OF]->(r)"
+            "SET b.repository = $repo_name, b.name = $branch_name",
             {
+                "branch_hash": hashlib.sha224(
+                    str(f"{repo_name}:{branch_name}").encode("utf-8")
+                ).hexdigest(),
                 "repo_name": repo_name,
                 "branch_name": branch_name,
             },

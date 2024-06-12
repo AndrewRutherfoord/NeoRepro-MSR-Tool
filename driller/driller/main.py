@@ -36,7 +36,8 @@ async def main():
     # Catch the docker container stop to speed up shutdown
     signal.signal(signal.SIGTERM, signal_handler)
 
-    driller_class = get_class(CONFIGS.get("DRILLER_CLASS"))
+    storage_class = get_class(CONFIGS.get("REPOSITORY_STORAGE_CLASS"))
+    driller_class = get_class(CONFIGS.get("REPOSITORY_DRILLER_CLASS"))
     worker_class = get_class(CONFIGS.get("WORKER_CLASS"))
 
     worker: QueueWorker = worker_class(
@@ -44,9 +45,10 @@ async def main():
         port=PIKA_PORT,
         queue=PIKA_QUEUE,
         driller_class=driller_class,
-        storage_class=RepositoryNeo4jStorage,
+        storage_class=storage_class,
         storage_args={"password": "neo4j123"},
     )
+    
     await worker.connect()
     await worker.consume_jobs()
 
