@@ -38,8 +38,8 @@ services:
       dockerfile: ./driller/Dockerfile
     # network_mode: host
     volumes:
-     - ./driller/repos:/app/driller/repos
      - ./driller/:/app/driller/
+    #  - ./driller/repos:/app/driller/repos
     deploy:
       replicas: 3
     # container_name: driller_worker

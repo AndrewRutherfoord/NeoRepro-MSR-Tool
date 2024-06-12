@@ -56,7 +56,7 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
         if "path" in repository:
             raise ValueError("Path cannot be set outside driller.")
 
-        repository["path"] = f"app/driller/repos/{repository['name']}"
+        repository["path"] = f"/app/driller/repos/{repository['name']}"
 
         logger.info("---------- Defaults Applied ----------")
 
