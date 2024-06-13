@@ -31,7 +31,7 @@ from backend.models.jobs import (
 )
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.INFO)
 router = APIRouter()
 
 
@@ -107,7 +107,7 @@ def get_job_status(session: Session, job_id: int):
     )
     result = session.execute(statement).first()
     return result if result else (None, None)
-
+from sqlalchemy.orm import selectinload
 
 @router.get("/jobs/")
 def list_jobs(
@@ -117,22 +117,22 @@ def list_jobs(
     limit: int = Query(default=100, le=100)
 ):
     result = session.exec(
-        select(Job, JobStatus)
-        .join(JobStatus, Job.id == JobStatus.job_id)
-        # .where(Job.id == job_id)
-        .order_by(JobStatus.timestamp.desc())
+        select(Job)
+        .options(selectinload(Job.job_statuses))
         .offset(offset)
         .limit(limit)
     ).all()
-    logger.warning(result)
+
+    
+    # logger.warning(result)
     items = []
     for item in result:
-        job, latest_status = item if item else (None, None)
+        job = item if item else item
         if job is None:
             return JSONResponse(status_code=404, content={"error": "Job not found"})
         items.append(
             JobList(
-                id=job.id, name=job.name, data=job.data, status=latest_status.status
+                id=job.id, name=job.name, data=job.data, statuses=job.job_statuses
             )
         )
     # job = result[0]
@@ -165,14 +165,6 @@ def detail_job(*, session: Session = Depends(get_session), job_id: int):
     job = session.get(Job, job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    return job
-
-
-@router.post("/test-jobs/")
-def create_hero(*, session: Session = Depends(get_session), job: Job):
-    session.add(job)
-    session.commit()
-    session.refresh(job)
     return job
 
 
@@ -220,6 +212,8 @@ async def create_job(
         session.add(db_job)
         session.commit()
         session.refresh(db_job)
+
+        job_dict["job_id"] = db_job.id
 
         db_job_status = JobStatus(job_id=db_job.id)
         session.add(db_job_status)

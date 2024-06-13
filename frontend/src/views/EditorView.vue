@@ -85,7 +85,7 @@ async function executeDrillJob() {
 
   try {
     let response = axios.post("http://127.0.0.1:8000/jobs/", yaml.load(content.value))
-    toast.success("Configuration Valid.")
+    toast.success("Jobs have been sent successfully.")
   } catch (e) {
     toast.error("Could not create jobs.")
     console.error(e)

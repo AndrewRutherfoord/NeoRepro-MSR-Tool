@@ -24,6 +24,7 @@ from .queue_worker import QueueWorker
 
 logger = logging.getLogger(__name__)
 
+
 class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
 
     def __init__(
@@ -84,13 +85,24 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
     def on_request(self, body):
         try:
             data = json.loads(body)
-
+            job_id = data.get("job_id")
             self.execute_drill_job(data.get("defaults"), data.get("repository"))
 
             # logger.info(f"Drill Job Complete: {drill_job.project.project_id}")
 
-            response = f"Drilling Complete for project ."
-            return response
+            response = {
+                "status": "complete",
+                "job_id": job_id,
+                "message": "Drilling complete.",
+            }
+            # response = f"Drilling Complete for job `{job_id}` ."
+            return json.dumps(response)
         except Exception as e:
             logger.exception(e)
-            return "Error: Could not process job."
+            return json.dumps(
+                {
+                    "status": "failed",
+                    "job_id": job_id,
+                    "message": "Drilling failed.",
+                }
+            )

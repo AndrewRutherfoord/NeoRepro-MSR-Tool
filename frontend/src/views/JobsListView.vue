@@ -8,9 +8,9 @@
 
     <v-data-table :items="data" :loading="isLoading" :headers="headers" show-select v-model="selected"
         hide-default-footer>
-        <template v-slot:item.status="{ value }">
-            <v-chip class="ma-2 text-capitalize" variant="elevated" compact :color="getStatusChipColor(value)">
-                {{ value }}
+        <template v-slot:item.statuses="{ value }">
+            <v-chip class="ma-2 text-capitalize" variant="elevated" compact :color="getStatusChipColor(value.slice(-1)[0].status)">
+                {{ value.slice(-1)[0].status }}
             </v-chip>
         </template>
         <template v-slot:item.button="{ item }">
@@ -48,7 +48,7 @@ const selected = ref([])
 const headers = [
     { title: 'ID', value: 'id' },
     { title: 'Job Name', value: 'name' },
-    { title: 'Status', key: 'status' },
+    { title: 'Status', key: 'statuses' },
     {
         title: '',
         key: 'button',

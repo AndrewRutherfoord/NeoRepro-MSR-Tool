@@ -11,8 +11,12 @@
       <v-col cols="10">
         <CypherCodeMirror v-model="query" class="border-sm" />
       </v-col>
+
       <v-col class="d-flex align-center">
-        <v-btn color="blue" @click="executeQuery">Execute Query</v-btn>
+
+        <v-btn color="blue" @click="executeQuery">Execute Query
+          <v-tooltip activator="parent" location="bottom">Execute query (Ctrl + Q)</v-tooltip>
+        </v-btn>
         <v-btn density="compact" variant="plain" icon="mdi-information-outline" class="ms-2"></v-btn>
       </v-col>
     </v-row>
@@ -37,7 +41,7 @@
 
 <script setup lang="ts">
 import CypherCodeMirror from '../components/CypherCodeMirror.vue';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import { useNeo4j } from '@/composables/useNeo4j';
 import { table } from 'console';
@@ -59,6 +63,17 @@ const tableHeaders = computed(() => {
 async function executeQuery() {
   await runQuery(query.value)
 }
+
+import { useMagicKeys } from '@vueuse/core'
+
+const keys = useMagicKeys()
+const ctrlQ = keys['Ctrl+Q']
+
+watch(ctrlQ, (v) => {
+  if (v) {
+    executeQuery()
+  }
+})
 
 onMounted(() => {
   initialize();

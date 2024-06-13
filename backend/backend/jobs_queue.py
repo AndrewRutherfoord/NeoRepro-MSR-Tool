@@ -8,6 +8,15 @@ from aio_pika.abc import (
     AbstractChannel, AbstractConnection, AbstractIncomingMessage, AbstractQueue,
 )
 
+import logging
+
+from sqlmodel import Session
+from backend.database import engine, get_session
+from backend.models.jobs import Job, JobStatus
+
+logger = logging.getLogger(__name__)
+
+
 class RabbitMQManager:
     def __init__(self, url: str, queue_name="fastapi", callback_queue_name="logs"):
         self._url = url
@@ -63,6 +72,16 @@ class DrillerClient(object):
 
         future: asyncio.Future = self.futures.pop(message.correlation_id)
         future.set_result(message.body)
+        
+        logger.warning(message.body)
+        response = json.loads(message.body)
+        job_id = response.get("job_id")
+        status = response.get("status")
+        with Session(engine) as session:
+            job_status = JobStatus(job_id=job_id, status =status)
+            session.add(job_status)
+            session.commit()
+            session.refresh(job_status)
 
     async def call(self, body : str) -> str:
         correlation_id = str(uuid.uuid4())
@@ -81,7 +100,7 @@ class DrillerClient(object):
             routing_key=self.queue,
         )
 
-        # return await future
+        return await future
     
     async def close(self):
         self.channel.close()

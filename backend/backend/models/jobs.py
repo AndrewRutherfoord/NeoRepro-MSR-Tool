@@ -22,7 +22,7 @@ class Job(JobBase, table=True):
 
 class JobList(JobBase):
     id: int
-    status: str
+    statuses: list["JobStatusOverview"]
 
 
 class JobDetails(JobList):
@@ -53,6 +53,8 @@ class JobStatus(JobStatusBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     job: Job | None = Relationship(back_populates="job_statuses")
 
+class JobStatusOverview(JobStatusBase):
+    pass
 
 class JobStatusDetails(JobStatusBase):
     job: JobBase | None
