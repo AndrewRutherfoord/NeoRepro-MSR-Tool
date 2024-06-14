@@ -1,16 +1,19 @@
 <template>
-    <div ref="editorRef"></div>
+    <div ref="editorDiv"></div>
 </template>
 
 <script setup lang="ts">
 import { createCypherEditor } from '@neo4j-cypher/codemirror';
-import { ref, onMounted, defineModel } from 'vue'
+import { editor } from 'monaco-editor';
+import { ref, onMounted, defineModel, watch } from 'vue'
 
-const editorRef = ref();
+const editorDiv = ref();
 
+const originalValue = ref();
 
-const model = defineModel();
+const editorInstance = ref();
 
+const query = ref("")
 onMounted(() => {
     // const myKeymap = [
     //     {
@@ -23,11 +26,28 @@ onMounted(() => {
     //     },
     // ];
 
-    const { editor } = createCypherEditor(editorRef.value, {})
+    const { editor } = createCypherEditor(editorDiv.value, {})
+    editorInstance.value = editor
     editor.onValueChanged((value: string) => {
-        model.value = value
+        query.value = value
     })
+
+    originalValue.value = "";
 })
+
+function setValue(value : string) {
+    originalValue.value = value;
+    editorInstance.value.setValue(value)
+}
+
+function getQuery() {
+    return query.value
+}
+
+defineExpose({
+    setValue,
+    getQuery
+});
 
 </script>
 

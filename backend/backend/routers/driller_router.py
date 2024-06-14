@@ -28,6 +28,7 @@ from backend.models.jobs import (
     JobList,
     JobStatus,
     JobStatusDetails,
+    JobStatusOverview,
 )
 
 logger = logging.getLogger(__name__)
@@ -98,16 +99,8 @@ class DrillConfig(BaseModel):
     repositories: list[RepositoryConfig]
 
 
-def get_job_status(session: Session, job_id: int):
-    statement = (
-        select(Job, JobStatus)
-        .join(JobStatus, Job.id == JobStatus.job_id)
-        .where(Job.id == job_id)
-        .order_by(JobStatus.timestamp.desc())
-    )
-    result = session.execute(statement).first()
-    return result if result else (None, None)
 from sqlalchemy.orm import selectinload
+
 
 @router.get("/jobs/")
 def list_jobs(
@@ -117,13 +110,9 @@ def list_jobs(
     limit: int = Query(default=100, le=100)
 ):
     result = session.exec(
-        select(Job)
-        .options(selectinload(Job.job_statuses))
-        .offset(offset)
-        .limit(limit)
+        select(Job).options(selectinload(Job.job_statuses)).offset(offset).limit(limit)
     ).all()
 
-    
     # logger.warning(result)
     items = []
     for item in result:
@@ -131,9 +120,7 @@ def list_jobs(
         if job is None:
             return JSONResponse(status_code=404, content={"error": "Job not found"})
         items.append(
-            JobList(
-                id=job.id, name=job.name, data=job.data, statuses=job.job_statuses
-            )
+            JobList(id=job.id, name=job.name, data=job.data, statuses=job.job_statuses)
         )
     # job = result[0]
     # latest_status = result[1]
@@ -187,13 +174,14 @@ def detail_job_status(*, session: Session = Depends(get_session), job_status_id:
 
 
 @router.post("/jobs/", response_model=list[JobList])
-async def create_job(
+async def create_jobs(
     *,
     session: Session = Depends(get_session),
     drill_config: DrillConfig,
     background_tasks: BackgroundTasks,
     request: Request
 ):
+    logger.warning("CREATE")
     drill_config_dict = drill_config.model_dump()
     jobs_list = []
     for repo_config in drill_config_dict["repositories"]:
@@ -225,10 +213,13 @@ async def create_job(
             json.dumps(job_dict),
         )
 
-        job, status = get_job_status(session, db_job.id)
-
         jobs_list.append(
-            JobList(id=job.id, name=job.name, data=job.data, status=status.status)
+            JobList(
+                id=db_job.id,
+                name=db_job.name,
+                data=db_job.data,
+                statuses=[JobStatusOverview(status=db_job_status.status, timestamp=db_job_status.timestamp)],
+            )
         )
 
     # result = await driller_client.call(body)

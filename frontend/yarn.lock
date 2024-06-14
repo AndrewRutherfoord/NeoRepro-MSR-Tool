@@ -721,6 +721,11 @@
   resolved "https://registry.yarnpkg.com/@polka/url/-/url-1.0.0-next.25.tgz#f077fdc0b5d0078d30893396ff4827a13f99e817"
   integrity sha512-j7P6Rgr3mmtdkeDGTe0E/aYyWEWVtc5yFXtHCRHs28/jptDEWfaVOc5T7cblqy1XKPPfCxJc/8DwQ5YgLOZOVQ==
 
+"@rmp135/vue-splitter@^2.0.2":
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/@rmp135/vue-splitter/-/vue-splitter-2.0.2.tgz#be22f01d7da4a3be213d738a934a4db4e2b07f91"
+  integrity sha512-0MuNq56QDpJg2wkpFpo+NvS5xnQQwz5Tc7Wh4sNIumj+gAI5mdj0P11LA7nSDkVRVVY6Tl6ExaGkGk5loAvjkg==
+
 "@rollup/pluginutils@^5.1.0":
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/@rollup/pluginutils/-/pluginutils-5.1.0.tgz#7e53eddc8c7f483a4ad0b94afb1f7f5fd3c771e0"

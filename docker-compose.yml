@@ -61,6 +61,7 @@ services:
     network_mode: host
     volumes:
      - ./backend/:/app/backend/
+     - ./queries:/app/backend/queries
     depends_on:
       neo4j:
         condition: service_started

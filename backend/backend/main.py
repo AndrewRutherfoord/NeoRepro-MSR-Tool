@@ -10,7 +10,7 @@ from sqlmodel import Session, select
 
 from backend.database import create_db_and_tables, engine
 from backend.jobs_queue import DrillerClient
-from backend.routers import driller_router
+from backend.routers import driller_router, queries
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ async def setup_jobs_queue():
 
 async def teardown_jobs_queue():
     global driller_client
-    driller_client.close()
+    await driller_client.close()
     driller_client = None
 
 
@@ -66,6 +66,7 @@ app = FastAPI(
 )
 
 app.include_router(driller_router.router)
+app.include_router(queries.router, prefix="/queries")
 
 origins = [
     "http://localhost:5173",
