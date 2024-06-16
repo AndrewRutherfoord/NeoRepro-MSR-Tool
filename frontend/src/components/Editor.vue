@@ -20,7 +20,7 @@ const props = defineProps(
   }
 )
 
-const emits = defineEmits(["input"])
+const emits = defineEmits(["input", "save"])
 
 const { ctrl_s } = useMagicKeys({
   passive: false,
@@ -33,7 +33,7 @@ const { ctrl_s } = useMagicKeys({
 const keys = useMagicKeys()
 const altShiftF = keys['Alt+Shift+F']
 
-whenever(ctrl_s, () => console.log('Ctrl+S have been pressed'))
+whenever(ctrl_s, () => emits('save'))
 whenever(altShiftF, () => formatCode())
 
 const MONACO_EDITOR_OPTIONS = {
