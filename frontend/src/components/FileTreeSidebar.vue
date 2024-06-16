@@ -1,6 +1,6 @@
 <template>
     <!-- <v-navigation-drawer permanent> -->
-    <v-list-item title="Saved Queries" subtitle="Click on one to open it and then execute it."></v-list-item>
+    <v-list-item :title="title" :subtitle="subtitle"></v-list-item>
     <v-divider></v-divider>
     <v-list v-if="!isLoading">
         <FileTreeNode v-for="key in Object.keys(data)" :key="key" :name="key" :data="data[key]" :path="key"
@@ -13,7 +13,7 @@
 import FileTreeNode from './FileTreeNode.vue'
 
 defineProps(
-    { data: Object, isLoading: Boolean }
+    { title: String, subtitle: String, data: Object, isLoading: Boolean }
 )
 
 const emits = defineEmits(['linkClicked', 'deleteFile'])
@@ -23,7 +23,6 @@ function onClick(path: string) {
 }
 
 function onDeleteFile(path: string) {
-    console.log("DELETE")
     emits('deleteFile', path)
 }
 

@@ -1,8 +1,9 @@
 <template>
   <vue-splitter initial-percent="20" style="height: 100%">
     <template #left-pane>
-      <query-sidebar @link-clicked="sidebarFileSelected" @delete-file="deleteQuery" :data="files"
-        :is-loading="filesIsLoading"></query-sidebar>
+      <file-tree-sidebar title="Saved Queries" subtitle="Click on one to open it and then execute it."
+        @link-clicked="sidebarFileSelected" @delete-file="deleteQuery" :data="files"
+        :is-loading="filesIsLoading"></file-tree-sidebar>
     </template>
     <template #right-pane>
 
@@ -57,7 +58,7 @@ import { useSaveData } from '@/composables/useSaveData';
 import { useAxios } from '@vueuse/integrations/useAxios'
 
 import VueSplitter from '@rmp135/vue-splitter'
-import QuerySidebar from '../components/QueriesSidebar.vue'
+import FileTreeSidebar from '../components/FileTreeSidebar.vue'
 import CypherCodeMirror from '../components/CypherCodeMirror.vue';
 import QueryDataDialog from '../components/QueryDataDialog.vue'
 
