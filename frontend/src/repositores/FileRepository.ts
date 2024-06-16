@@ -73,7 +73,7 @@ export class ConfigurationFileRepository extends FileRepository {
 
 export class QueryFileRepository extends FileRepository {
   constructor() {
-    super(`configs/`)
+    super(`queries/`)
   }
 
   /**

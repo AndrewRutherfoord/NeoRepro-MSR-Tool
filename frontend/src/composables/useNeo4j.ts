@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import neo4j, { Driver, Session } from 'neo4j-driver'
 
 export function useNeo4j(uri: string, user: string, password: string) {
@@ -54,6 +54,14 @@ export function useNeo4j(uri: string, user: string, password: string) {
       loading.value = false
     }
   }
+
+  onMounted(() => {
+    initialize();
+  });
+  
+  onBeforeUnmount(() => {
+    close();
+  });
 
   return {
     initialize,

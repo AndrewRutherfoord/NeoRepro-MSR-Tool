@@ -8,40 +8,25 @@ import { editor } from 'monaco-editor';
 import { ref, onMounted, defineModel, watch } from 'vue'
 
 const editorDiv = ref();
-
-const originalValue = ref();
-
 const editorInstance = ref();
 
-const query = ref("")
-onMounted(() => {
-    // const myKeymap = [
-    //     {
-    //         key: "Ctrl-Enter",
-    //         run: () => {
-    //             console.log("Ctrl+Enter was pressed!");
-    //             // Custom action on Ctrl+Enter
-    //             return true; // Return true to prevent the default action
-    //         },
-    //     },
-    // ];
+const model = defineModel();
 
+onMounted(() => {
     const { editor } = createCypherEditor(editorDiv.value, {})
     editorInstance.value = editor
     editor.onValueChanged((value: string) => {
-        query.value = value
+        model.value = value
     })
-
-    originalValue.value = "";
 })
 
-function setValue(value : string) {
-    originalValue.value = value;
+function setValue(value: string) {
     editorInstance.value.setValue(value)
+    model.value = value
 }
 
 function getQuery() {
-    return query.value
+    return model.value
 }
 
 defineExpose({

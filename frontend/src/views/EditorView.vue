@@ -8,7 +8,7 @@
     <template #right-pane>
       <div class="d-flex justify-space-between">
         <v-breadcrumbs class="py-2" :items="currentFile ? currentFile.split('/') : ['new-file.json']"></v-breadcrumbs>
-        <v-btn class="mt-1 me-" size="compact" variant="text" @click="saveConfiguration" icon="mdi-content-save"
+        <v-btn class="mt-1 me-3" size="compact" variant="text" @click="saveConfiguration" icon="mdi-content-save"
           :disabled="!unsavedChanges"></v-btn>
       </div>
       <hr>
@@ -198,6 +198,7 @@ async function saveConfiguration() {
   await getConfigFilesList()
 
 }
+
 async function deleteConfiguration(path: string) {
   let ok = await confirm(`Are you sure you want to delete '${path}'?`)
   try {
