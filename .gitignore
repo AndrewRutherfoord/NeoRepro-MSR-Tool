@@ -176,3 +176,6 @@ rabbitmq
 /testing/dataset.json 
 
 *.sqlite
+
+configs/*
+queries/*
