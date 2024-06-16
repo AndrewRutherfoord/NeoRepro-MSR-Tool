@@ -1,11 +1,19 @@
 import { ref, type Ref } from 'vue'
 
+/**
+ * Saves data to a file using a link element.
+ * 
+ * @param data String data to be saved to a file. Passed as a Ref to allow for reactivity. Only saved when saveToFile() is called.
+ * @param initialFilename Initial value for the filename ref. Defaults to 'data.json'. Can be changed by calling filename.value = '<filename>.json'
+ */
 export function useSaveData(data: Ref<string>, initialFilename: string = 'data.json') {
   const filename = ref<string>(initialFilename)
 
+  /**
+   * Saves the data to a file. 
+   * Source: https://www.tutorialspoint.com/how-to-create-and-save-text-file-in-javascript
+   */
   const saveToFile = () => {
-    // Convert data to JSON
-    // const jsonData = JSON.stringify(data.value)
 
     // Create a blob from the data
     const blob = new Blob([data.value], { type: 'application/json' })

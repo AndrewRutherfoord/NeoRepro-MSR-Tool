@@ -9,7 +9,8 @@
     <v-data-table :items="data" :loading="isLoading" :headers="headers" show-select v-model="selected"
         hide-default-footer>
         <template v-slot:item.statuses="{ value }">
-            <v-chip class="ma-2 text-capitalize" variant="elevated" compact :color="getStatusChipColor(value.slice(-1)[0].status)">
+            <v-chip class="ma-2 text-capitalize" variant="elevated" compact
+                :color="getStatusChipColor(value.slice(-1)[0].status)">
                 {{ value.slice(-1)[0].status }}
             </v-chip>
         </template>
@@ -27,6 +28,15 @@
                 <code class="text-red">
                 <pre>{{ prettyJSON(dialogItem.data) }}</pre>
             </code>
+
+                <h4>Statuses</h4>
+
+                <ol>
+                    <li v-for="status in dialogItem.statuses" :key="status.timestamp" class="text-capitalize"> {{ status.status }}
+                        ({{ status.timestamp }})</li>
+                </ol>
+
+
             </v-card-text>
             <template v-slot:actions>
                 <v-btn class="ms-auto" text="Ok" @click="dialog = false"></v-btn>

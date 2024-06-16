@@ -10,11 +10,9 @@
 </template>
 
 <script setup lang="ts">
-import { useAxios } from '@vueuse/integrations/useAxios'
-import axios from 'axios';
 import FileTreeNode from './FileTreeNode.vue'
 
-const props = defineProps(
+defineProps(
     { data: Object, isLoading: Boolean }
 )
 

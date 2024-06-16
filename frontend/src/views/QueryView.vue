@@ -49,15 +49,17 @@
 </template>
 
 <script setup lang="ts">
-import CypherCodeMirror from '../components/CypherCodeMirror.vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import QuerySidebar from '../components/QueriesSidebar.vue'
+import axios from 'axios';
+
 import { useNeo4j } from '@/composables/useNeo4j';
-import QueryDataDialog from './QueryDataDialog.vue'
 import { useSaveData } from '@/composables/useSaveData';
 import { useAxios } from '@vueuse/integrations/useAxios'
-import axios from 'axios';
+
 import VueSplitter from '@rmp135/vue-splitter'
+import QuerySidebar from '../components/QueriesSidebar.vue'
+import CypherCodeMirror from '../components/CypherCodeMirror.vue';
+import QueryDataDialog from '../components/QueryDataDialog.vue'
 
 const dialog = ref(false);
 const dialogData = ref<string>()
@@ -66,11 +68,10 @@ const toast = useToast();
 
 // ----- Executing Queries -----
 
-const query = ref();
 const editor = ref()
 
 const { initialize, close, runQuery, error, loading, result, headers, notifications } = useNeo4j('neo4j://localhost:7687', 'neo4j', 'neo4j123');
-// const { query, data } = useNeo4j();
+
 const tableHeaders = computed(() => {
   let result = headers.value?.map((h) => ({ title: h, key: h }));
   result?.push({ title: "", key: 'actions' })
@@ -147,7 +148,6 @@ async function saveQuery() {
   await getQueryFiles()
 
 }
-
 
 async function deleteQuery(path: string) {
   let ok = await confirm("Are you sure you want to delete this saved query?")
