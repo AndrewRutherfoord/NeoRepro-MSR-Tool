@@ -1,25 +1,22 @@
 // src/composables/useFetchList.ts
 import { ref, onMounted } from 'vue'
 import type { AxiosResponse } from 'axios'
-import type { BaseRepository } from '@/repositores/BaseRepository'
+import type { BaseListRepository } from '@/repositores/BaseListRepository'
 
 /**
  * Composable that calls the getAll method of a BaseRepository and returns the items, loading state, and errors.
  *
  * @param repositoryInstance instance of BaseRepository on which the getAll method is called
  */
-export function useRepositoryList<ListType, ItemType>(
-  repositoryInstance: BaseRepository<ListType, ItemType>
-) {
+export function useRepositoryList<ListType>(repository: BaseListRepository<ListType>) {
   const items = ref<ListType[]>([])
   const loading = ref(true)
   const error = ref<string | null>(null)
-  const repository = repositoryInstance
 
   /**
    * calls the getAll method of the repository and sets the items ref to the response data. Sets loading before and after request.
    * If an error occurs, sets error to the error message.
-   * 
+   *
    * @returns List of items from the repository
    * @throws AxiosError if an error occurs on the request
    */
@@ -43,7 +40,6 @@ export function useRepositoryList<ListType, ItemType>(
     items,
     loading,
     error,
-    repository,
     fetchItems
   }
 }
