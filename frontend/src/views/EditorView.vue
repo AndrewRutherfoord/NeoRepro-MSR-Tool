@@ -32,10 +32,9 @@
 
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import axios from "axios";
 import yaml from 'js-yaml';
-import { onBeforeRouteLeave } from 'vue-router'
 
 import { useAxios } from '@vueuse/integrations/useAxios'
 import { useToast } from '../composables/useToast';
@@ -50,6 +49,7 @@ import Editor from '../components/Editor.vue'
 import { ConfigurationFileRepository } from '../repositores/FileRepository'
 import { useRepositoryList } from '@/composables/useRepositoryList';
 import { useYamlValidation } from '@/composables/useYamlValidation';
+import { useConfirmLeavePage } from '@/composables/useConfirmLeavePage';
 
 const configurationsRepository = new ConfigurationFileRepository();
 
@@ -65,6 +65,18 @@ const savedContent = ref<string>("");
 
 const unsavedChanges = computed(() => content.value !== savedContent.value)
 
+onMounted(() => {
+  try {
+    // Get the initial content from example config file.
+    content.value = initial;
+    savedContent.value = content.value;
+  } catch (e) {
+    console.error("Error parsing YAML file:", e);
+  }
+})
+
+// ----- Validation of config -----
+
 const { valid, error, validate } = useYamlValidation(schema, content)
 
 /**
@@ -77,6 +89,8 @@ function checkConfig() {
     toast.error("Configuration Invalid.", error.value ? error.value : '')
   }
 }
+
+// ----- Execution of Drill Job -----
 
 /**
  * Sends job config file to backend. Should then be sent to workers to drill repositories.
@@ -104,38 +118,12 @@ async function executeDrillJob() {
 
 const confirmLeaveMessage = "You have unsaved changes. Are you sure you want to leave ?";
 
-/**
- * Before reloading the page, checks if there are unsaved changes and shows a confirm leave dialog.
- */
-function beforeReload(event: { returnValue: string; }) {
-  // To show confirm leave dialog.
-  if (unsavedChanges.value) {
-    event.returnValue = confirmLeaveMessage; // Needed for some browsers
-  }
-  return confirmLeaveMessage;
-}
+// Inverse of unsaved changes. If true, the page can be left without showing the dialog.
+const leavable = computed(() => !unsavedChanges.value)
 
-onMounted(() => {
-  try {
-    // Get the initial content from example config file.
-    content.value = initial;
-    savedContent.value = content.value;
-  } catch (e) {
-    console.error("Error parsing YAML file:", e);
-  }
-  window.addEventListener('beforeunload', beforeReload);
-})
+// Shows the confirm leave dialog when there are unsaved changes.
+useConfirmLeavePage(confirmLeaveMessage, leavable)
 
-onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', beforeReload);
-})
-
-onBeforeRouteLeave(() => {
-  if (unsavedChanges.value && !confirm(confirmLeaveMessage)) {
-    return false
-  }
-  return true;
-})
 
 // ----- Saving Configurations -----
 
@@ -149,6 +137,7 @@ async function sidebarFileSelected(path: string) {
   try {
     let response = await configurationsRepository.getById(path)
     content.value = response.data;
+    savedContent.value = content.value;
     currentFile.value = path;
   } catch (e) {
     toast.error("Failed to load query files.")
