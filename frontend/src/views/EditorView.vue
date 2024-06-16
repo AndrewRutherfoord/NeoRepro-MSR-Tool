@@ -2,7 +2,7 @@
   <vue-splitter initial-percent="20" style="height: 100%">
     <template #left-pane>
       <file-tree-sidebar title="Saved Configs" subtitle="Click on one to open it and then execute it."
-        @link-clicked="sidebarFileSelected" @delete-file="deleteConfiguration" @create-file="openNewFile" :data="files"
+        @link-clicked="openFile" @delete-file="deleteConfiguration" @create-file="openNewFile" :data="files"
         :is-loading="filesIsLoading"></file-tree-sidebar>
     </template>
     <template #right-pane>
@@ -33,11 +33,17 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import yaml from 'js-yaml';
 
 import { useAxios } from '@vueuse/integrations/useAxios'
-import { useToast } from '../composables/useToast';
+import { useRoute, useRouter } from 'vue-router';
+import { useRepositoryList } from '@/composables/useRepositoryList';
+import { useYamlValidation } from '@/composables/useYamlValidation';
+import { useConfirmLeavePage } from '@/composables/useConfirmLeavePage';
+import { useToast } from '@/composables/useToast';
+
+import { ConfigurationFileRepository } from '../repositores/FileRepository'
 
 import FileTreeSidebar from '../components/FileTreeSidebar.vue'
 import VueSplitter from '@rmp135/vue-splitter'
@@ -46,10 +52,9 @@ import initial from '../assets/initial.yaml?raw'
 import schema from '../../../schemas/schema.json?raw'
 import Editor from '../components/Editor.vue'
 
-import { ConfigurationFileRepository } from '../repositores/FileRepository'
-import { useRepositoryList } from '@/composables/useRepositoryList';
-import { useYamlValidation } from '@/composables/useYamlValidation';
-import { useConfirmLeavePage } from '@/composables/useConfirmLeavePage';
+
+const router = useRouter()
+const route = useRoute()
 
 const configurationsRepository = new ConfigurationFileRepository();
 
@@ -65,13 +70,14 @@ const savedContent = ref<string>("");
 
 const unsavedChanges = computed(() => content.value !== savedContent.value)
 
-onMounted(() => {
-  try {
-    // Get the initial content from example config file.
+onMounted(async () => {
+  if (route.query.file) {
+    // Open the file if `file` query parameter is set.
+    currentFile.value = route.query.file as string
+    await openFile(route.query.file as string)
+  } else {
     content.value = initial;
     savedContent.value = content.value;
-  } catch (e) {
-    console.error("Error parsing YAML file:", e);
   }
 })
 
@@ -127,20 +133,32 @@ useConfirmLeavePage(confirmLeaveMessage, leavable)
 
 // ----- Saving Configurations -----
 
+// List of all the configuration files.
 const { items: files, loading: filesIsLoading, fetchItems: getConfigFilesList } = useRepositoryList(configurationsRepository);
 
 /**
  * On selection of file in sidebar, load the file and set the content.
  * @param path Path of the file to load.
  */
-async function sidebarFileSelected(path: string) {
+async function openFile(path: string) {
   try {
     let response = await configurationsRepository.getById(path)
+    console.log(response)
     content.value = response.data;
     savedContent.value = content.value;
     currentFile.value = path;
+    router.replace({ query: { file: path } })
   } catch (e) {
-    toast.error("Failed to load query files.")
+    if (axios.isAxiosError(e)) {
+      if (e.response?.status === 404) {
+        toast.error("File not found.")
+      } else {
+        toast.error("Failed to load file.")
+      }
+    } else {
+      toast.error("Failed to load file.")
+    }
+    openNewFile();
   }
 }
 
@@ -151,8 +169,8 @@ async function sidebarFileSelected(path: string) {
 async function openNewFile() {
   content.value = initial;
   currentFile.value = null;
+  router.replace({})
 }
-
 
 /**
  * Saves the current configuration file.
@@ -181,11 +199,11 @@ async function saveConfiguration() {
 
 }
 async function deleteConfiguration(path: string) {
-  let ok = await confirm("Are you sure you want to delete this configuration file?")
+  let ok = await confirm(`Are you sure you want to delete '${path}'?`)
   try {
     if (ok) {
       let response = await configurationsRepository.delete(path)
-      toast.success("Query deleted.")
+      toast.success("COnfiguration file deleted.")
       // If the deleted file is the current file, open a clean new file.
       if (path === currentFile.value) {
         openNewFile()
