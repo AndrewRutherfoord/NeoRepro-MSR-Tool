@@ -36,8 +36,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import axios from "axios";
 import yaml from 'js-yaml';
 import { onBeforeRouteLeave } from 'vue-router'
-import Ajv from 'ajv';
-import addFormats from "ajv-formats"
 
 import { useAxios } from '@vueuse/integrations/useAxios'
 import { useToast } from '../composables/useToast';
@@ -51,6 +49,7 @@ import Editor from '../components/Editor.vue'
 
 import { ConfigurationFileRepository } from '../repositores/FileRepository'
 import { useRepositoryList } from '@/composables/useRepositoryList';
+import { useYamlValidation } from '@/composables/useYamlValidation';
 
 const configurationsRepository = new ConfigurationFileRepository();
 
@@ -66,52 +65,17 @@ const savedContent = ref<string>("");
 
 const unsavedChanges = computed(() => content.value !== savedContent.value)
 
+const { valid, error, validate } = useYamlValidation(schema, content)
+
 /**
- * Check the config file against the json schema. 
- * 
- * @param createValidNotification Indicates whether the function should create a toast on valid config.
- * @returns boolean: Whether the config is valid.
+ * Checks if the current configuration is valid.
  */
-function checkConfig(createValidNotification = true) {
-  let configuration;
-  try {
-    configuration = yaml.load(content.value)
-  } catch (e) {
-    toast.error("Could not parse yaml. Invalid syntax.")
-    return false
+function checkConfig() {
+  if (validate()) {
+    toast.success("Configuration is valid!")
+  } else {
+    toast.error("Configuration Invalid.", error.value ? error.value : '')
   }
-
-  const ajv = new Ajv({ strictTypes: false });
-  // Add formats extension to be able to check date formats
-  addFormats(ajv)
-
-  try {
-    // Check if input matches schema
-    const isValid = ajv.validate(JSON.parse(schema), configuration)
-
-    if (isValid) {
-      if (createValidNotification) {
-        toast.success("Configuration is valid!")
-      }
-      return true;
-    } else {
-      let item = ajv.errors?.pop()
-      let message = "";
-      console.error(item)
-      if (item?.params?.format === "date") {
-        // For date fields, inform the user of the format that is expected.
-        message = "Date format must match YYYY-MM-DD."
-      } else {
-        message = item?.message ? item.message : ":/";
-      }
-      toast.error("Configuration Invalid.", `Error at '${item?.instancePath}': ${message}\n`)
-      return false;
-    }
-  } catch (e) {
-    toast.error("Could not parse configuration.")
-    return false;
-  }
-
 }
 
 /**
@@ -119,7 +83,7 @@ function checkConfig(createValidNotification = true) {
  * Checks config before sending. If invalid, halts and creates error toast.
  */
 async function executeDrillJob() {
-  if (!checkConfig(false)) {
+  if (!validate()) {
     return
   }
 
