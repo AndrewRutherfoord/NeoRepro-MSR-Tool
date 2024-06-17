@@ -22,3 +22,56 @@ Run the docker container:
 ```bash
 docker compose up -d
 ```
+
+## The Configuration Syntax
+
+The configuration file is a YAML file that contains the following fields:
+
+- `defaults`: Object containing default values for each drill job.
+- `repositores`: List of repositories to be drilled. Defaults from `defaults` are applied to each, unless overridden.
+
+### Defaults
+
+The `defaults` object contains the following fields:
+
+- `pydriller`: Object containing configurations for pydriller `Repository` class. All options explained at [pydriller](https://pydriller.readthedocs.io/en/latest/repository.html).
+  - `since`: Date from which to start drilling. Format: YYYY-MM-DD
+  - `to`: Date to which commits should be drilled. Format: YYYY-MM-DD
+  - `from_commit`: A commit hash from which to start drilling.
+  - `to_commit`: A commit hash to which commits should be drilled.
+  - `from_tag`: A tag from which to start drilling.
+  - `to_tag`: A tag to which commits should be drilled.
+  - `only_in_branch`: Name of branch to be drilled.
+  - `only_no_merge`: Boolean. If true, only commits that are not merged will be included.
+  - `only_authors`: List of strings. Only commits by these authors will be included.
+  - `only_commits`: List of strings. Commit hashes for commits to be included.
+  - `only_release`: Boolean. Only commits that are tagged release will be included.
+  - `filepath`: Only commits that modify this file will be included.
+  - `only_modifications_with_file_types`: List of string. Only commits that modify files of this type will be included.
+- `filters`: Object containing string filters.
+  - `commit`: List of filters. (Shown below)
+
+- `delete_clone`: Boolean. Indicates whether to delete the cloned repository after the drilling is complete.
+- `index_file_modifications`: Boolean. Indicates whether to drill the modified files. If false, only the commits will be drilled.
+
+#### Filters
+
+A filter contains the following fields:
+
+- `field`: The field to be checked for the filter.
+- `value`: A string or list of strings. The value(s) to be checked for the filter. If list, then behaves as an `OR` (if field contains any of the values).
+- `method`: Can be one of the following:
+  - `contains`: The value is contained in the field.
+  - `!contains`: The value is not contained in the field.
+  - `exact`: The value is equal to the field.
+  - `!exact`: The value is not equal to the field.
+
+
+### Repositories
+
+Each repository can contain all of the fields from `defaults` but must also contain the following fields:
+
+- `name`: Name of the repository.
+- `url`: Https url to the repository to clone it in the case it isn't already cloned.
+
+If any values are not provided in the repository, the default values from `defaults` will be used.
