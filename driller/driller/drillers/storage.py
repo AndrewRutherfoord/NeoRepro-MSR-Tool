@@ -31,7 +31,7 @@ class RepositoryDataStorage(ABC):
         pass
 
     @abstractmethod
-    def store_modified_file(self, commit, file):
+    def store_modified_file(self, commit, file, repository_name):
         pass
 
 
@@ -163,28 +163,32 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         for branch in commit.branches:
             # Create an `IN_BRANCH` relationship between the commit and the branches it belongs to.
             self._add_to_batch(
-                "MATCH (b:Branch {name: $branch_name}), (c:Commit {hash: $hash})"
+                "MATCH (b:Branch {name: $branch_name, repository: $repository}), (c:Commit {hash: $hash})"
                 "MERGE (c)-[:IN_BRANCH]->(b)",
                 {
                     "branch_name": branch,
+                    "repository": repo_name,
                     "hash": commit.hash,
                 },
             )
 
-    def store_modified_file(self, commit, file):
+    def store_modified_file(self, commit, file, repository_name):
         # Creates or Updates a FIle instance and links it to the commit with a `MODIFIED` relationship
         # Relationship holds all the modification information
         self._add_to_batch(
-            "MATCH (c:Commit {hash: $hash}) "
-            "MERGE (f:File {name: $filename}) "
+            "MATCH (c:Commit {hash: $commit_hash}) "
+            "MERGE (f:File {hash: $file_hash}) "
             "MERGE (c)-[r:MODIFIED]->(f) "
             "SET f.name = $filename, "
             "r.old_path = $old_path, r.new_path = $new_path, "
             "r.filename = $filename, r.change_type = $change_type, "
             "r.added_lines = $added_lines, r.deleted_lines = $deleted_lines, "
-            "r.nloc = $nloc, r.complexity = $complexity, r.token_count = $token_count",
+            "r.nloc = $nloc, r.complexity = $complexity, r.token_count = $token_count, r.diff = $diff",
             {
-                "hash": commit.hash,
+                "commit_hash": commit.hash,
+                "file_hash": hashlib.sha224(
+                    str(f"{file.filename}:{repository_name}").encode("utf-8")
+                ).hexdigest(),
                 "filename": file.filename,
                 "old_path": file.old_path,
                 "new_path": file.new_path,
@@ -195,6 +199,7 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
                 "nloc": file.nloc,
                 "complexity": file.complexity,
                 "token_count": file.token_count,
+                "diff": file.diff,
             },
         )
         # TODO: Other fields that can be used: diff, diff_parsed, source_code, source_code_before, methods, methods_before, changed_methods,
@@ -203,10 +208,16 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         if file.change_type.name == "RENAME":
             old_name = file.old_path.split("/")[-1]
             logger.info(old_name)
+            old_file_hash = hashlib.sha224(
+                str(f"{old_name}:{repository_name}").encode("utf-8")
+            ).hexdigest()
+            new_file_hash = hashlib.sha224(
+                str(f"{file.filename}:{repository_name}").encode("utf-8")
+            ).hexdigest()
             self._add_to_batch(
-                "MATCH  (old:File {name : $old_name}),(new:File {name: $filename})"
+                "MATCH  (old:File {hash : $old_hash}),(new:File {hash: $new_hash})"
                 "MERGE (old)-[:RENAMED_TO]->(new)",
-                {"old_name": old_name, "filename": file.filename},
+                {"old_hash": old_file_hash, "new_hash": new_file_hash},
             )
 
 

@@ -55,7 +55,7 @@ class TestStorage(RepositoryDataStorage):
     def store_developer(self, developer):
         pass
 
-    def store_modified_file(self, commit, file):
+    def store_modified_file(self, commit, file, repository_name):
         pass
 
 
