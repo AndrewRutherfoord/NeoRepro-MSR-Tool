@@ -14,10 +14,11 @@ logger = logging.getLogger(__name__)
 class RepositoryDriller:
     """A GraphRepo Driller that takes configs from config objects."""
 
-    def __init__(self, repository_path, storage: RepositoryDataStorage):
+    def __init__(self, repository_path, storage: RepositoryDataStorage, config):
         self.repository_path = repository_path
         self.repository_name = self.repository_path.split("/")[-1]
         self.storage = storage
+        self.config = config
 
     def get_commits(self, pydriller_filters={}):
         return Repository(self.repository_path, **pydriller_filters).traverse_commits()
@@ -31,9 +32,14 @@ class RepositoryDriller:
 
     def _handle_modified_files(self, commit: Commit, files):
         for file in files:
-            self.storage.store_modified_file(commit, file, self.repository_name)
+            self.storage.store_modified_file(
+                commit,
+                file,
+                self.repository_name,
+                index_diff=self.config.get("index_file_diff", False),
+            )
 
-    def drill_commits(self, filters: dict = {}, pydriller_filters={}, index_file_modifications=True):
+    def drill_commits(self, filters: dict = {}, pydriller_filters={}):
         """Drills all the commits based on the filters and pydriller configs.
         Inserts all the data into the storage.
         Args:
@@ -41,12 +47,12 @@ class RepositoryDriller:
             pydriller_filters (dict, optional): Pydriller configurations. Defaults to {}.
             index_file_modifications (bool, optional): Whether to index file modifications. Defaults to True.
         """
-        
+
         pydriller_filters = {} if pydriller_filters is None else pydriller_filters
-        
+
         # Handle the conversion of date stings to datetime objects
-        pydriller_filters["since"] = handle_date(pydriller_filters,"since")
-        pydriller_filters["to"] = handle_date(pydriller_filters,"to")
+        pydriller_filters["since"] = handle_date(pydriller_filters, "since")
+        pydriller_filters["to"] = handle_date(pydriller_filters, "to")
 
         for commit in self.get_commits(pydriller_filters):
             if self.commit_filter(commit, filters):
@@ -55,7 +61,7 @@ class RepositoryDriller:
 
                 self.storage.store_commit(self.repository_name, commit)
 
-                if index_file_modifications:
+                if self.config.get("index_file_modifications", False):
                     self._handle_modified_files(commit, commit.modified_files)
 
     def commit_filter(self, commit, filter_configs: list[dict] = {}) -> bool:
@@ -71,7 +77,7 @@ class RepositoryDriller:
         if filter_configs is None:
             # If no filters given, then automatically accept.
             return True
-        
+
         for item in filter_configs.get("commit", []):
             field = item.get("field")
             filter_value = item.get("value")

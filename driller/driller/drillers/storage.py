@@ -7,6 +7,8 @@ from neo4j import GraphDatabase
 
 from pydriller import Commit
 
+from repos.pydriller.pydriller.domain.commit import ModifiedFile
+
 URI = "neo4j://localhost:7687"
 AUTH = ("neo4j", "neo4j123")
 
@@ -172,35 +174,54 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
                 },
             )
 
-    def store_modified_file(self, commit, file, repository_name):
+    def store_modified_file(
+        self, commit: Commit, file: ModifiedFile, repository_name: str, index_diff=True
+    ):
+        """Stores a file modification and links it to the commit.
+        If the file change is a RENAME, creates a `RENAMED_TO` relation from the old file node.
+
+        Args:
+            commit: Pydriller Commit which the file was modified in.
+            file: PyDriller ModifiedFile instance to store.
+            repository_name: Used in filename hash.
+            index_diff: Whether to index the file git diff.
+        """
+
         # Creates or Updates a FIle instance and links it to the commit with a `MODIFIED` relationship
         # Relationship holds all the modification information
+        query_str = """MATCH (c:Commit {hash: $commit_hash}) 
+            MERGE (f:File {hash: $file_hash})
+            MERGE (c)-[r:MODIFIED]->(f)
+            SET f.name = $filename,
+            r.old_path = $old_path, r.new_path = $new_path,
+            r.filename = $filename, r.change_type = $change_type,
+            r.added_lines = $added_lines, r.deleted_lines = $deleted_lines,
+            r.nloc = $nloc, r.complexity = $complexity, r.token_count = $token_count"""
+
+        values = {
+            "commit_hash": commit.hash,
+            "file_hash": hashlib.sha224(
+                str(f"{file.filename}:{repository_name}").encode("utf-8")
+            ).hexdigest(),
+            "filename": file.filename,
+            "old_path": file.old_path,
+            "new_path": file.new_path,
+            "filename": file.filename,
+            "change_type": file.change_type.name,  # ENUM
+            "added_lines": file.added_lines,
+            "deleted_lines": file.deleted_lines,
+            "nloc": file.nloc,
+            "complexity": file.complexity,
+            "token_count": file.token_count,
+        }
+
+        if index_diff:
+            query_str += ", r.diff = $diff"
+            values["diff"] = file.diff
+
         self._add_to_batch(
-            "MATCH (c:Commit {hash: $commit_hash}) "
-            "MERGE (f:File {hash: $file_hash}) "
-            "MERGE (c)-[r:MODIFIED]->(f) "
-            "SET f.name = $filename, "
-            "r.old_path = $old_path, r.new_path = $new_path, "
-            "r.filename = $filename, r.change_type = $change_type, "
-            "r.added_lines = $added_lines, r.deleted_lines = $deleted_lines, "
-            "r.nloc = $nloc, r.complexity = $complexity, r.token_count = $token_count, r.diff = $diff",
-            {
-                "commit_hash": commit.hash,
-                "file_hash": hashlib.sha224(
-                    str(f"{file.filename}:{repository_name}").encode("utf-8")
-                ).hexdigest(),
-                "filename": file.filename,
-                "old_path": file.old_path,
-                "new_path": file.new_path,
-                "filename": file.filename,
-                "change_type": file.change_type.name,  # ENUM
-                "added_lines": file.added_lines,
-                "deleted_lines": file.deleted_lines,
-                "nloc": file.nloc,
-                "complexity": file.complexity,
-                "token_count": file.token_count,
-                "diff": file.diff,
-            },
+            query_str,
+            values,
         )
         # TODO: Other fields that can be used: diff, diff_parsed, source_code, source_code_before, methods, methods_before, changed_methods,
 
@@ -222,6 +243,9 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
 
 
 class LogRepositoryStorage(RepositoryDataStorage):
+    """Storage class for logging the data to the console.
+    Just for testing purposes.
+    """
 
     def __init__(self):
         pass
