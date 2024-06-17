@@ -1,4 +1,14 @@
 <template>
+  <v-app-bar>
+    <v-app-bar-title>Editor</v-app-bar-title>
+    <template v-slot:append>
+      <v-btn class="mx-2" variant="outlined" color="green" @click="checkConfig" prepend-icon="mdi-check">Check
+        Config</v-btn>
+      <v-btn variant="outlined" @click="executeDrillJob">Execute
+        Drill Job</v-btn>
+    </template>
+  </v-app-bar>
+
   <vue-splitter initial-percent="20" style="height: 100%">
     <template #left-pane>
       <file-tree-sidebar title="Saved Configs" subtitle="Click on one to open it and then execute it."
@@ -14,16 +24,6 @@
       <hr>
       <!-- {{ currentFile }} -->
       <v-sheet height="100vh">
-        <v-app-bar>
-          <v-app-bar-title>Editor</v-app-bar-title>
-          <template v-slot:append>
-            <v-btn class="mx-2" variant="outlined" color="green" @click="checkConfig" prepend-icon="mdi-check">Check
-              Config</v-btn>
-            <v-btn variant="outlined" @click="executeDrillJob">Execute
-              Drill Job</v-btn>
-          </template>
-        </v-app-bar>
-
         <Editor v-model="content" @save="saveConfiguration"></Editor>
       </v-sheet>
     </template>
@@ -36,7 +36,6 @@ import { computed, onMounted, ref } from 'vue';
 import axios, { AxiosError } from "axios";
 import yaml from 'js-yaml';
 
-import { useAxios } from '@vueuse/integrations/useAxios'
 import { useRoute, useRouter } from 'vue-router';
 import { useRepositoryList } from '@/composables/useRepositoryList';
 import { useYamlValidation } from '@/composables/useYamlValidation';
@@ -59,7 +58,6 @@ const route = useRoute()
 const configurationsRepository = new ConfigurationFileRepository();
 
 const toast = useToast();
-const { execute } = useAxios(axios)
 
 // Editor content.
 const currentFile = ref<string | null>(null);
@@ -108,10 +106,7 @@ async function executeDrillJob() {
   }
 
   try {
-    let response = await execute(`/jobs/${path}`, {
-      method: 'POST',
-      data: yaml.load(content.value)
-    })
+    let response = axios.post("http://127.0.0.1:8000/jobs/", yaml.load(content.value))
     toast.success("Jobs have been sent successfully.")
   } catch (e) {
     toast.error("Could not create jobs.")

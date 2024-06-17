@@ -6,7 +6,7 @@
     </v-app-bar>
 
 
-    <v-data-table :items="data" :loading="isLoading" :headers="headers" show-select v-model="selected"
+    <v-data-table :items="items" :loading="loading" :headers="headers" show-select v-model="selected"
         hide-default-footer>
         <template v-slot:item.statuses="{ value }">
             <v-chip class="ma-2 text-capitalize" variant="elevated" compact
@@ -32,7 +32,8 @@
                 <h4>Statuses</h4>
 
                 <ol>
-                    <li v-for="status in dialogItem.statuses" :key="status.timestamp" class="text-capitalize"> {{ status.status }}
+                    <li v-for="status in dialogItem.statuses" :key="status.timestamp" class="text-capitalize"> {{
+                        status.status }}
                         ({{ status.timestamp }})</li>
                 </ol>
 
@@ -50,8 +51,13 @@ import axios from 'axios';
 import { onMounted, ref } from 'vue'
 import { useAxios } from '@vueuse/integrations/useAxios'
 import yaml from 'js-yaml';
+import { useRepositoryList } from '@/composables/useRepositoryList';
+import { JobsRepository } from '@/repositores/JobsRepository';
 
-const { data, isLoading, execute } = useAxios('/jobs/', axios)
+const jobsRepository = new JobsRepository()
+
+// const { data, isLoading, execute } = useAxios('/jobs/', axios)
+const { items, loading, error, fetchItems } = useRepositoryList(jobsRepository)
 
 const selected = ref([])
 
@@ -84,7 +90,7 @@ async function deleteJob(id: number) {
 
         try {
             await axios.delete(`/jobs/${id}/`)
-            execute();
+            fetchItems();
         } catch (e) {
             console.error(e)
         }
@@ -98,7 +104,6 @@ function getStatusChipColor(status: string) {
             return 'amber-lighten-1'
         case 'complete':
             return 'green'
-
         default:
             return "secondary";
     }
