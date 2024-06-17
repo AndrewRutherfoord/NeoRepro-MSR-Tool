@@ -31,13 +31,13 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
         self,
         host,
         port,
-        queue,
+        queue_name,
         driller_class,
         storage_class,
         driller_args: dict = {},
         storage_args: dict = {},
     ):
-        super().__init__(host, port, queue)
+        super().__init__(host, port, queue_name)
 
         self.driller_class = driller_class
         self.driller_args = driller_args

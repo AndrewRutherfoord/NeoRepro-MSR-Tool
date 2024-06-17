@@ -67,12 +67,9 @@ class DrillerClient(object):
 
     async def on_response(self, message: AbstractIncomingMessage) -> None:
         if message.correlation_id is None:
-            print(f"Bad message {message!r}")
+            logger.error(f"Bad message {message!r}")
             return
 
-        future: asyncio.Future = self.futures.pop(message.correlation_id)
-        future.set_result(message.body)
-        
         logger.warning(message.body)
         response = json.loads(message.body)
         job_id = response.get("job_id")
@@ -85,10 +82,6 @@ class DrillerClient(object):
 
     async def call(self, body : str) -> str:
         correlation_id = str(uuid.uuid4())
-        loop = asyncio.get_running_loop()
-        future = loop.create_future()
-
-        self.futures[correlation_id] = future
 
         await self.channel.default_exchange.publish(
             Message(
@@ -99,8 +92,6 @@ class DrillerClient(object):
             ),
             routing_key=self.queue,
         )
-
-        return await future
     
     async def close(self):
         self.channel.close()

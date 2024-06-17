@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from abc import ABC, abstractmethod
 
@@ -8,10 +9,10 @@ logger = logging.getLogger(__name__)
 
 class QueueWorker(ABC):
 
-    def __init__(self, host, port, queue):
+    def __init__(self, host, port, queue_name):
         self.host = host
         self.port = port
-        self.queue = queue
+        self.queue_name = queue_name
 
         self.connection = None
         self.channel = None
@@ -25,10 +26,15 @@ class QueueWorker(ABC):
 
             # Creating a channel
             self.channel = await self.connection.channel()
+
+            # Setting prefetch count to 1 ensures that work is distrubuted evenly.
+            await self.channel.set_qos(prefetch_count=1)
             self.exchange = self.channel.default_exchange
 
             # Declaring queue
-            self.queue = await self.channel.declare_queue(self.queue)
+            self.queue = await self.channel.declare_queue(
+                self.queue_name,
+            )
             logger.info("Connected to amqp...")
         except:
             logger.exception("Could not connect to message queue.")

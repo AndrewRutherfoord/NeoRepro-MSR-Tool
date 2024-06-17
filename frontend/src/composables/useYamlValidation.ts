@@ -25,6 +25,7 @@ export function useYamlValidation(schema: string, content: Ref<string>) {
     try {
       configuration = yaml.load(content.value)
     } catch (e) {
+      console.error(e)
       error.value = 'Could not parse configuration.'
       valid.value = false
       return false
@@ -54,6 +55,8 @@ export function useYamlValidation(schema: string, content: Ref<string>) {
         return false
       }
     } catch (e) {
+      console.error(e)
+
       error.value = 'Could not parse configuration.'
       valid.value = false
       return false

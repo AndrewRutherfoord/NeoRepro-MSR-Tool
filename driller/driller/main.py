@@ -43,7 +43,7 @@ async def main():
     worker: QueueWorker = worker_class(
         host=PIKA_HOST,
         port=PIKA_PORT,
-        queue=PIKA_QUEUE,
+        queue_name=PIKA_QUEUE,
         driller_class=driller_class,
         storage_class=storage_class,
         storage_args={"password": "neo4j123"},

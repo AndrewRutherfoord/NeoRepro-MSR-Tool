@@ -102,6 +102,7 @@ function checkConfig() {
  */
 async function executeDrillJob() {
   if (!validate()) {
+    toast.error(error.value ? error.value : 'Configuration is invalid.')
     return
   }
 
