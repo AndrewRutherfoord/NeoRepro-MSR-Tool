@@ -93,13 +93,13 @@ class SaveBody(BaseModel):
     content: str
 
 
-@router.post("/queries/save/{path:path}")
+@router.post("/queries/{path:path}")
 async def save_query_file(path: str, body: SaveBody):
     try:
         save_file(QUERIES_PATH, path, body.content)
         return Response(status_code=201)
     except FileExistsError as e:
-        return HTTPException(400, "File already exists.")
+        raise HTTPException(400, "File already exists.")
 
 
 @router.get("/queries/{path:path}")
@@ -108,7 +108,7 @@ async def get_query_file(path: str):
     if os.path.isfile(file_path):
         return FileResponse(file_path)
     else:
-        return HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(status_code=404, detail="File not found")
 
 
 @router.delete("/queries/{path:path}")
@@ -116,7 +116,7 @@ async def delete_query_file(path: str):
     try:
         delete_file(QUERIES_PATH, path)
     except FileNotFoundError:
-        return HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(status_code=404, detail="File not found")
 
 
 # ----- Config Files -----
@@ -134,7 +134,7 @@ async def save_query_file(path: str, body: SaveBody):
         created = save_file(CONFIGS_PATH, path, body.content)
         return Response(status_code=201 if created else 200)
     except FileExistsError as e:
-        return HTTPException(400, "File already exists.")
+        raise HTTPException(400, "File already exists.")
 
 
 @router.get("/configs/{path:path}")
@@ -143,7 +143,7 @@ async def get_query_file(path: str):
     if os.path.isfile(file_path):
         return FileResponse(file_path)
     else:
-        return HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(status_code=404, detail="File not found")
 
 
 @router.delete("/configs/{path:path}")
@@ -151,4 +151,4 @@ async def delete_query_file(path: str):
     try:
         delete_file(CONFIGS_PATH, path)
     except FileNotFoundError:
-        return HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(status_code=404, detail="File not found")
