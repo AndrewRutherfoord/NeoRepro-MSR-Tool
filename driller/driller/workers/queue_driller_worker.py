@@ -59,17 +59,17 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
 
         repository["path"] = f"/app/driller/repos/{repository['name']}"
 
-        logger.info("---------- Defaults Applied ----------")
-
         if repository.get("url", None) is not None:
             clone_repository(
                 repository_url=repository["url"], repository_location=repository["path"]
             )
-            logger.info("---------- Repository Cloned ----------")
+            logger.info(f"Cloned Repository {repository['name']} to `{repository['path']}`")
 
-        # # Instantiate instance of driller class
+        # Instantiate the storage class where the drilled data will be written
         storage = self.storage_class(**self.storage_args)
-        driller = self.driller_class(
+
+        # Instantiate the driller class. Drills the repository and writes the data to the storage class.
+        driller : RepositoryDriller = self.driller_class(
             repository_path=repository["path"], storage=storage, **self.driller_args
         )
         logger.info("---------- Driller Instantiated ----------")
@@ -78,6 +78,7 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
         driller.drill_commits(
             filters=repository.get("filters", {}),
             pydriller_filters=remove_none_values(repository.get("pydriller", {})),
+            index_file_modifications=repository.get("index_file_modifications", True),
         )
 
         storage.close()

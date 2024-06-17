@@ -31,27 +31,31 @@ class RepositoryDriller:
 
     def _handle_modified_files(self, commit: Commit, files):
         for file in files:
-            self.storage.store_modified_file(commit, file)
+            self.storage.store_modified_file(commit, file, self.repository_name)
 
-    def drill_commits(self, filters: dict = {}, pydriller_filters={}, drill_files=True):
+    def drill_commits(self, filters: dict = {}, pydriller_filters={}, index_file_modifications=True):
         """Drills all the commits based on the filters and pydriller configs.
         Inserts all the data into the storage.
+        Args:
+            filters (dict, optional): Filters to apply to the commits. Defaults to {}.
+            pydriller_filters (dict, optional): Pydriller configurations. Defaults to {}.
+            index_file_modifications (bool, optional): Whether to index file modifications. Defaults to True.
         """
         
         pydriller_filters = {} if pydriller_filters is None else pydriller_filters
+        
+        # Handle the conversion of date stings to datetime objects
         pydriller_filters["since"] = handle_date(pydriller_filters,"since")
         pydriller_filters["to"] = handle_date(pydriller_filters,"to")
 
-        logger.info(f"------------------------------------- Pydriller Filters: {pydriller_filters}")
         for commit in self.get_commits(pydriller_filters):
             if self.commit_filter(commit, filters):
-                # logger.info("Drilling Commit")
                 self._handle_branches(commit.branches)
                 self._handle_committer(commit.author)
 
                 self.storage.store_commit(self.repository_name, commit)
 
-                if drill_files:
+                if index_file_modifications:
                     self._handle_modified_files(commit, commit.modified_files)
 
     def commit_filter(self, commit, filter_configs: list[dict] = {}) -> bool:
@@ -61,7 +65,7 @@ class RepositoryDriller:
             commit (Commit): PyDriller Commit instance.
 
         Returns:
-            bool: whether it should be inserted. If True, commit inserted into storage.
+            bool: whether it should be indexed. If True, commit inserted into storage.
         """
 
         if filter_configs is None:
@@ -75,6 +79,8 @@ class RepositoryDriller:
 
             value = getattr(commit, field, f"`{field}` not in Commit.")
 
+            # TODO: This can probably be done in a nicer way.
+            # TODO: Regex support??
             if isinstance(filter_value, list):
                 if method == "exact" and not any(fv == value for fv in filter_value):
                     return False
