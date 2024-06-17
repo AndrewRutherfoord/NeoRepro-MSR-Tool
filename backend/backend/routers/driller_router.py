@@ -17,6 +17,7 @@ import logging
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select, delete
+from sqlalchemy.orm import selectinload
 
 from backend.jobs_queue import DrillerClient, RabbitMQManager
 from backend.database import engine, get_session
@@ -82,6 +83,7 @@ class FiltersConfig(BaseModel):
 class DefaultsConfig(BaseModel):
     delete_clone: bool = False
     index_file_modifications: bool = False
+    index_file_diff: bool = False
     pydriller: PydrillerConfig = None
     filters: FiltersConfig = None
 
@@ -90,16 +92,15 @@ class RepositoryConfig(DefaultsConfig):
     name: str
     url: str = None
 
+    # Have to set to None because to make it optional
     delete_clone: bool = None
     index_file_modifications: bool = None
+    index_file_diff: bool = None
 
 
 class DrillConfig(BaseModel):
     defaults: DefaultsConfig
     repositories: list[RepositoryConfig]
-
-
-from sqlalchemy.orm import selectinload
 
 
 @router.get("/jobs/")

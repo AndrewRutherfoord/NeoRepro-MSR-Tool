@@ -53,6 +53,7 @@ The `defaults` object contains the following fields:
 
 - `delete_clone`: Boolean. Indicates whether to delete the cloned repository after the drilling is complete.
 - `index_file_modifications`: Boolean. Indicates whether to drill the modified files. If false, only the commits will be drilled.
+- `index_file_diff`: Boolean. Indicates whether the file diffs should be indexed. If false, it won't be added to database.
 
 #### Filters
 

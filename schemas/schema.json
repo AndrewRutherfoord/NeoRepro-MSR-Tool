@@ -23,9 +23,13 @@
           "delete_clone": {
             "description": "If repository was cloned, then True will result in the clone being deleted once drilling complete.",
             "type": "boolean"
-            },
-            "index_file_modifications": {
+          },
+          "index_file_modifications": {
             "description": "Should commit file modification be drilled. Takes longer to drill large repositories.",
+            "type": "boolean"
+          },
+          "index_file_diff": {
+            "description": "Should commit file git diff be drilled. Takes longer to drill large repositories. Only works if `index_file_modifications` is True.",
             "type": "boolean"
           },
           "pydriller": {

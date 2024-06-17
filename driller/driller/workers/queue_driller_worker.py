@@ -70,7 +70,7 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
 
         # Instantiate the driller class. Drills the repository and writes the data to the storage class.
         driller : RepositoryDriller = self.driller_class(
-            repository_path=repository["path"], storage=storage, **self.driller_args
+            repository_path=repository["path"], storage=storage, config=repository,**self.driller_args
         )
         logger.info("---------- Driller Instantiated ----------")
 
@@ -78,7 +78,6 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
         driller.drill_commits(
             filters=repository.get("filters", {}),
             pydriller_filters=remove_none_values(repository.get("pydriller", {})),
-            index_file_modifications=repository.get("index_file_modifications", True),
         )
 
         storage.close()
