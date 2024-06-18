@@ -187,6 +187,8 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
             index_diff: Whether to index the file git diff.
         """
 
+        logger.debug(f"Storing file {file.filename} in commit {commit.hash}")
+        
         # Creates or Updates a FIle instance and links it to the commit with a `MODIFIED` relationship
         # Relationship holds all the modification information
         query_str = """MATCH (c:Commit {hash: $commit_hash}) 
@@ -228,7 +230,6 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         # If the file change is a RENAME, create a `RENAMED_TO` relation from the old file node.
         if file.change_type.name == "RENAME":
             old_name = file.old_path.split("/")[-1]
-            logger.info(old_name)
             old_file_hash = hashlib.sha224(
                 str(f"{old_name}:{repository_name}").encode("utf-8")
             ).hexdigest()

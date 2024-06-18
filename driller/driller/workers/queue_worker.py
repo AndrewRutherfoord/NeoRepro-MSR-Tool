@@ -9,13 +9,16 @@ logger = logging.getLogger(__name__)
 
 class QueueWorker(ABC):
 
-    def __init__(self, host, port, queue_name):
+    def __init__(self, host, port, queue_name, heartbeat_interval=30):
         self.host = host
         self.port = port
         self.queue_name = queue_name
 
         self.connection = None
         self.channel = None
+        
+        self.heartbeat_interval = heartbeat_interval
+        self.heartbeat_task = None
 
     async def connect(self):
         try:
@@ -65,7 +68,8 @@ class QueueWorker(ABC):
                         body = message.body.decode()
                         logger.debug(f"Message received: {body}.")
 
-                        response = self.on_request(body)
+                        # response = self.on_request(body)
+                        response = await self.handle_request(body)
 
                         await self.exchange.publish(
                             aio_pika.Message(
@@ -84,7 +88,34 @@ class QueueWorker(ABC):
 
         # logger.info(f"Awaiting Tasks on queue '{self.queue}'.")
         # self.channel.start_consuming()
+    async def handle_request(self, body):
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(None, self.on_request, body)
+        return response
+
+    async def send_heartbeat(self):
+        while True:
+            try:
+                await self.connection.ready()
+                logger.debug("Heartbeat sent")
+            except Exception as e:
+                logger.exception("Heartbeat failed: %s", e)
+            await asyncio.sleep(self.heartbeat_interval)
+
+    async def heartbeat(self):
+        while True:
+            await asyncio.sleep(self.heartbeat_interval)
+            await self.channel.heartbeat_tick()
+        
+    async def start(self):
+        await self.connect()
+        self.heartbeat_task = asyncio.create_task(self.heartbeat())
+        await self.consume_jobs()
 
     def close(self):
-        self.channel.close()
-        self.connection.close()
+        if self.heartbeat_task:
+            self.heartbeat_task.cancel()
+        if self.channel:
+            asyncio.run(self.channel.close())
+        if self.connection:
+            asyncio.run(self.connection.close())
