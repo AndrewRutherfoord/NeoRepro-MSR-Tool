@@ -1,3 +1,7 @@
 <template>
-    <h1>Home</h1>
+    <markdown-viewer />
 </template>
+
+<script setup lang="ts">
+import MarkdownViewer from '@/components/MarkdownViewer.vue';
+</script>

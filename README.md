@@ -1,35 +1,42 @@
 # Graph DB MSR Tool
 
-## Cloning
-
-This repository includes submodules so once you clone the repository run:
-
-```bash
-git submodule init
-git submodule update
-```
-
 ## Executing the Project
 
-Copy env from example:
+1. Copy env from example:
 
 ```bash
 cp .env.example .env
 ```
 
-Run the docker container:
+2. Run the docker container:
 
 ```bash
 docker compose up -d
 ```
 
-### Change the permissions of the import directory
-
-This is necessary so that the backend can access the import directory.
+3. Change the permissions of the import directory. This is necessary so that the backend can access the import directory.
 
 ```bash
 chmod -R 775 neo4j_db/import/
 ```
+
+4. Navigate to http://localhost:5173/
+
+## 3 Operating Modes
+
+This application can be used in  3 different ways, catering to different use cases.
+
+### 1. Interacting with an existing reproduction dataset
+
+TODO: Write this section
+
+### 2. Reproduce a study using the replication package
+
+TODO: Write this section
+
+### 3. Create a new study
+
+TODO: Write this section
 
 ## The Configuration Syntax
 

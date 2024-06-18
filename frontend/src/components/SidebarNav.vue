@@ -25,6 +25,11 @@ import { useTheme } from 'vuetify'
 
 const routes = [
     {
+        label: "Home",
+        icon: "mdi-home",
+        routeName: "home"
+    },
+    {
         label: "Editor",
         icon: "mdi-code-braces",
         routeName: "editor"

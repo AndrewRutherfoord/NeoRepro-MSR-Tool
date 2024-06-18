@@ -86,8 +86,9 @@ services:
       context: ./
       dockerfile: ./frontend/Dockerfile
     volumes:
-      - ./frontend/:/app/frontend/
+      - ./frontend/src:/app/frontend/src # For Development
       - ./schemas/:/app/schemas/
+      - ./README.md:/app/README.md:ro # For Development
     depends_on:
       - backend
     

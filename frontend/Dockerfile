@@ -7,4 +7,6 @@ RUN yarn install
 
 COPY ./frontend .
 
+COPY README.md ..
+
 CMD ["yarn", "run", "dev"]
