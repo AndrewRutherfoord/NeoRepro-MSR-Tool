@@ -82,7 +82,6 @@ app.add_middleware(
 )
 
 
-@app.get("/")
-async def test():
-    logger.warning("TEST")
-    return Response("hello", status_code=200)
+@app.get('/healthcheck')
+def get_healthcheck():
+    return 'OK'

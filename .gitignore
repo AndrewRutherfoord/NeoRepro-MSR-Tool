@@ -177,5 +177,4 @@ rabbitmq
 
 *.sqlite
 
-configs/*
-queries/*
+volumes/**

@@ -42,10 +42,12 @@ services:
     build: 
       context: ./
       dockerfile: ./driller/Dockerfile
-    # network_mode: host
+    env_file: .env
     volumes:
-     - ./driller/:/app/driller/
-     - ./volumes/repos:/app/driller/driller/repos
+     - ./driller/:/app/driller/  # For Development
+     - ./common/:/app/common/    # For Development
+
+     - ./volumes/repos:/app/repositories # Location of Repos to Drill/Where they will be cloned.
     deploy:
       replicas: 3
     depends_on:
@@ -53,8 +55,7 @@ services:
         condition: service_healthy
       neo4j:
         condition: service_started
-    env_file:
-      - .env
+
   backend:
     container_name: backend
     ports:
@@ -62,9 +63,11 @@ services:
     build: 
       context: ./
       dockerfile: ./backend/Dockerfile
+    env_file: .env
     network_mode: host
     volumes:
      - ./backend/:/app/backend/ # For Development
+     - ./common/:/app/common/ # For Development
 
      - ./volumes/queries:/app/backend/queries # Location of Cypher Queries
      - ./volumes/configs:/app/backend/configs # Location of Drill Config Files
@@ -74,8 +77,7 @@ services:
         condition: service_started
       driller-worker:
         condition: service_started
-    env_file:
-      - .env
+
   frontend:
     container_name: frontend
     ports:

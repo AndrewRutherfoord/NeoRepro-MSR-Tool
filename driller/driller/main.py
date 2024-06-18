@@ -10,9 +10,9 @@ from driller.settings.default import LOG_FORMAT, LOG_LEVEL, CONFIGS
 from driller.util import get_class
 
 from driller.settings.default import (
-    PIKA_HOST,
-    PIKA_PORT,
-    PIKA_QUEUE,
+    RABBITMQ_HOST,
+    RABBITMQ_PORT,
+    RABBITMQ_QUEUE,
 )
 from driller.workers.queue_worker import QueueWorker
 
@@ -41,16 +41,17 @@ async def main():
     worker_class = get_class(CONFIGS.get("WORKER_CLASS"))
 
     worker: QueueWorker = worker_class(
-        host=PIKA_HOST,
-        port=PIKA_PORT,
-        queue_name=PIKA_QUEUE,
+        host=RABBITMQ_HOST,
+        port=RABBITMQ_PORT,
+        queue_name=RABBITMQ_QUEUE,
         driller_class=driller_class,
         storage_class=storage_class,
         storage_args={"password": "neo4j123"},
     )
     
-    await worker.connect()
-    await worker.consume_jobs()
+    await worker.start()
+    # await worker.connect()
+    # await worker.consume_jobs()
 
 
 def exec():

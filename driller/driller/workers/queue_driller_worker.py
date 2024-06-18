@@ -12,11 +12,7 @@ from driller.drillers.driller import RepositoryDriller
 from driller.drillers.storage import RepositoryNeo4jStorage
 
 from driller.settings.default import (
-    NEO4J_DEFAULT_BATCH_SIZE,
-    NEO4J_HOST,
-    NEO4J_PORT,
-    NEO4J_USER,
-    NEO4J_PASSWORD,
+    REPO_CLONE_LOCATION,
 )
 from driller.util import get_class, remove_none_values
 from ..driller_config import DrillConfig, Neo4jConfig
@@ -36,6 +32,7 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
         storage_class,
         driller_args: dict = {},
         storage_args: dict = {},
+        clone_location: str = REPO_CLONE_LOCATION,
     ):
         super().__init__(host, port, queue_name)
 
@@ -43,6 +40,8 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
         self.driller_args = driller_args
         self.storage_class = storage_class
         self.storage_args = storage_args
+        
+        self.clone_location = clone_location
 
     def apply_defaults(self, defaults: dict, repository: dict):
         for key, value in defaults.items():
@@ -58,7 +57,7 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
             logger.error("Path cannot be set outside driller.")
             raise ValueError("Path cannot be set outside driller.")
 
-        repository["path"] = f"/app/driller/repos/{repository['name']}"
+        repository["path"] = f"{self.clone_location}{repository['name']}"
 
         if repository.get("url", None) is not None:
             clone_repository(

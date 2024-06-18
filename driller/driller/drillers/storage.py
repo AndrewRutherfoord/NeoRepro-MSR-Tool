@@ -3,11 +3,8 @@ import hashlib
 import logging
 
 from neo4j import GraphDatabase
-
-
 from pydriller import Commit
-
-from repos.pydriller.pydriller.domain.commit import ModifiedFile
+from pydriller.domain.commit import ModifiedFile
 
 URI = "neo4j://localhost:7687"
 AUTH = ("neo4j", "neo4j123")

@@ -4,24 +4,25 @@ import os
 # DATE_FORMAT = "%d %B, %Y %H:%M"
 DATE_FORMAT = "%Y-%m-%d"
 
-PIKA_HOST = os.environ.get("PIKA_HOST")
-PIKA_PORT = os.environ.get("PIKA_PORT")
-PIKA_QUEUE = os.environ.get("PIKA_QUEUE")
-
-AUTO_ACKNOWLEDGE = os.environ.get("AUTO_ACKNOWLEDGE") in ["1", "true", "True"]
+RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST")
+RABBITMQ_PORT = os.environ.get("RABBITMQ_PORT")
+RABBITMQ_QUEUE = os.environ.get("RABBITMQ_QUEUE")
 
 NEO4J_USER = os.environ.get("NEO4J_USER", None)
 NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", None)
 NEO4J_HOST = os.environ.get("NEO4J_HOST", None)
 NEO4J_PORT = os.environ.get("NEO4J_PORT", None)
+
 NEO4J_DEFAULT_BATCH_SIZE = None
-if os.environ.get("NEO4J_DEFAULT_BATCH_SIZE", None) is not None:
+try:
     NEO4J_DEFAULT_BATCH_SIZE = int(os.environ.get("NEO4J_DEFAULT_BATCH_SIZE"))
+except ValueError:
+    raise ValueError("NEO4J_DEFAULT_BATCH_SIZE must be an integer.")
 
 LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
-REPO_CLONE_LOCATION = ""
+REPO_CLONE_LOCATION = os.environ.get("REPO_CLONE_LOCATION", "/tmp/repos")
 
 DEFAULT_CONFIGS = {
     "REPOSITORY_STORAGE_CLASS": "driller.drillers.storage.RepositoryNeo4jStorage",
