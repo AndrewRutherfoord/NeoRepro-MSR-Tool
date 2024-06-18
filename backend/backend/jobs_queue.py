@@ -12,7 +12,7 @@ import logging
 
 from sqlmodel import Session
 from backend.database import engine, get_session
-from backend.models.jobs import Job, JobStatus
+from common.models.jobs import Job, JobStatus
 
 logger = logging.getLogger(__name__)
 

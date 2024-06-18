@@ -11,7 +11,7 @@ from alembic import op
 import sqlalchemy as sa
 import sqlmodel
 import sqlalchemy_utils
-from backend.models.jobs import JobStatusEnum
+from common.models.jobs import JobStatusEnum
 # revision identifiers, used by Alembic.
 revision: str = '9f9a6f0e5ac2'
 down_revision: Union[str, None] = None
