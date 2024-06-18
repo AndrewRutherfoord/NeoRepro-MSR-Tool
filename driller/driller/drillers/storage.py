@@ -99,15 +99,18 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
     def store_repository(self, repo_name):
         self._add_to_batch("MERGE (r:Repository {name: $name})", {"name": repo_name})
 
+    def hash_branch(self, branch_name, repository_name):
+        return hashlib.sha224(
+            str(f"{branch_name}:{repository_name}").encode("utf-8")
+        ).hexdigest()
+
     def store_branch(self, repo_name, branch_name):
         self._add_to_batch(
             "MATCH (r:Repository {name: $repo_name}) "
             "MERGE (b:Branch {hash: $branch_hash })-[:PART_OF]->(r)"
             "SET b.repository = $repo_name, b.name = $branch_name",
             {
-                "branch_hash": hashlib.sha224(
-                    str(f"{repo_name}:{branch_name}").encode("utf-8")
-                ).hexdigest(),
+                "branch_hash": self.hash_branch(branch_name, repo_name),
                 "repo_name": repo_name,
                 "branch_name": branch_name,
             },
@@ -151,7 +154,8 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         for parent_hash in commit.parents:
             # Create a `PARENT` relationship between the current commit and it's parents
             self._add_to_batch(
-                "MATCH (c:Commit {hash: $hash}), (p:Commit {hash: $parent_hash}) "
+                "MATCH (c:Commit {hash: $hash}) "
+                "MATCH (p:Commit {hash: $parent_hash}) "
                 "MERGE (c)-[:PARENT]->(p)",
                 {
                     "hash": commit.hash,
@@ -162,12 +166,12 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         for branch in commit.branches:
             # Create an `IN_BRANCH` relationship between the commit and the branches it belongs to.
             self._add_to_batch(
-                "MATCH (b:Branch {name: $branch_name, repository: $repository}), (c:Commit {hash: $hash})"
+                "MATCH (b:Branch {hash: $branch_hash})"
+                "MATCH (c:Commit {hash: $commit_hash})"
                 "MERGE (c)-[:IN_BRANCH]->(b)",
                 {
-                    "branch_name": branch,
-                    "repository": repo_name,
-                    "hash": commit.hash,
+                    "branch_hash": self.hash_branch(branch, repo_name),
+                    "commit_hash": commit.hash,
                 },
             )
 
@@ -185,7 +189,7 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         """
 
         logger.debug(f"Storing file {file.filename} in commit {commit.hash}")
-        
+
         # Creates or Updates a FIle instance and links it to the commit with a `MODIFIED` relationship
         # Relationship holds all the modification information
         query_str = """MATCH (c:Commit {hash: $commit_hash}) 
@@ -234,7 +238,8 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
                 str(f"{file.filename}:{repository_name}").encode("utf-8")
             ).hexdigest()
             self._add_to_batch(
-                "MATCH  (old:File {hash : $old_hash}),(new:File {hash: $new_hash})"
+                "MATCH  (old:File {hash : $old_hash})"
+                "MATCH (new:File {hash: $new_hash})"
                 "MERGE (old)-[:RENAMED_TO]->(new)",
                 {"old_hash": old_file_hash, "new_hash": new_file_hash},
             )
