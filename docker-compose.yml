@@ -28,7 +28,7 @@ services:
      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
     healthcheck:
       # Pings rabbitmq service to check if started
-      test: rabbitmq-diagnostics -q ping
+      test: rabbitmq-diagnostics check_port_connectivity
       interval: 5s
       timeout: 5s
       retries: 5
