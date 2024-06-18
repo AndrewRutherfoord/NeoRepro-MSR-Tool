@@ -1,4 +1,5 @@
 services:
+  #
   neo4j:
     container_name: neo4j
     image: neo4j:latest
@@ -12,10 +13,14 @@ services:
       - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
       - NEO4J_PLUGINS=["apoc", "apoc-extended"]
     volumes:
-      - ./neo4j_db/data:/data
-      - ./neo4j_db/logs:/logs
-      - ./neo4j_db/import:/var/lib/neo4j/import
-      - ./neo4j_db/plugins:/plugins
+      - ./volumes/neo4j_db/data:/data
+      - ./volumes/neo4j_db/logs:/logs
+      - ./volumes/neo4j_db/plugins:/plugins
+
+      # Location where Database Dump files are stored. Also loaded from here.
+      - ./volumes/neo4j_import:/var/lib/neo4j/import
+
+  # Message Queue used to send send & distrubte drill jobs to driller-workers
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -24,14 +29,15 @@ services:
       - "5672:5672"
       - "15672:15672"
     volumes:
-     - ./rabbitmq/data/:/var/lib/rabbitmq/mnesia/
-     - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+     - ./volumes/rabbitmq/data/:/var/lib/rabbitmq/mnesia/
+     - ./volumes/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
     healthcheck:
       # Pings rabbitmq service to check if started
       test: rabbitmq-diagnostics check_port_connectivity
       interval: 5s
       timeout: 5s
       retries: 5
+
   driller-worker:
     build: 
       context: ./
@@ -39,13 +45,11 @@ services:
     # network_mode: host
     volumes:
      - ./driller/:/app/driller/
-    #  - ./driller/repos:/app/driller/repos
+     - ./volumes/repos:/app/driller/driller/repos
     deploy:
       replicas: 3
-    # container_name: driller_worker
     depends_on:
       rabbitmq:
-        # Wait for rabbitmq to be healthy
         condition: service_healthy
       neo4j:
         condition: service_started
@@ -60,10 +64,11 @@ services:
       dockerfile: ./backend/Dockerfile
     network_mode: host
     volumes:
-     - ./backend/:/app/backend/
-     - ./queries:/app/backend/queries
-     - ./configs:/app/backend/configs
-     - ./neo4j_db/import/:/app/neo4j_import/
+     - ./backend/:/app/backend/ # For Development
+
+     - ./volumes/queries:/app/backend/queries # Location of Cypher Queries
+     - ./volumes/configs:/app/backend/configs # Location of Drill Config Files
+     - ./volumes/neo4j_import/:/app/neo4j_import/
     depends_on:
       neo4j:
         condition: service_started
@@ -71,3 +76,16 @@ services:
         condition: service_started
     env_file:
       - .env
+  frontend:
+    container_name: frontend
+    ports:
+      - 5173:5173
+    build: 
+      context: ./
+      dockerfile: ./frontend/Dockerfile
+    volumes:
+      - ./frontend/:/app/frontend/
+      - ./schemas/:/app/schemas/
+    depends_on:
+      - backend
+    
