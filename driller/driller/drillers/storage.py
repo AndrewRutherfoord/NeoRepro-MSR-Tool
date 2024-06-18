@@ -91,7 +91,7 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
 
     def _process_batch(self):
         """Runs a batch of cypher commands on the Neo4j DB."""
-        logger.info("Processing Batch")
+        logger.debug("Processing Batch")
         if self.batch:
             with self.driver.session() as session:
                 with session.begin_transaction() as tx:

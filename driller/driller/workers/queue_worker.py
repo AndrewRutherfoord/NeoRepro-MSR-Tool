@@ -63,7 +63,7 @@ class QueueWorker(ABC):
                         assert message.reply_to is not None
 
                         body = message.body.decode()
-                        logger.info(f"Message received: {body}.")
+                        logger.debug(f"Message received: {body}.")
 
                         response = self.on_request(body)
 
@@ -74,7 +74,7 @@ class QueueWorker(ABC):
                             ),
                             routing_key=message.reply_to,
                         )
-                        logger.info("Request complete")
+                        logger.debug("Request complete")
                 except Exception:
                     logging.exception("Processing error for message %r", message)
         # self.channel.queue_declare(queue=self.queue)

@@ -17,7 +17,7 @@ from driller.settings.default import (
 from driller.workers.queue_worker import QueueWorker
 
 logger = logging.getLogger(__name__)
-
+logging.getLogger("pydriller").setLevel(logging.WARNING)
 worker = None
 
 

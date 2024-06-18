@@ -55,6 +55,7 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
         repository = self.apply_defaults(defaults, repository)
 
         if "path" in repository:
+            logger.error("Path cannot be set outside driller.")
             raise ValueError("Path cannot be set outside driller.")
 
         repository["path"] = f"/app/driller/repos/{repository['name']}"
@@ -63,40 +64,56 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
             clone_repository(
                 repository_url=repository["url"], repository_location=repository["path"]
             )
-            logger.info(f"Cloned Repository {repository['name']} to `{repository['path']}`")
+            logger.debug(
+                f"Cloned Repository {repository['name']} to `{repository['path']}`"
+            )
 
         # Instantiate the storage class where the drilled data will be written
         storage = self.storage_class(**self.storage_args)
 
         # Instantiate the driller class. Drills the repository and writes the data to the storage class.
-        driller : RepositoryDriller = self.driller_class(
-            repository_path=repository["path"], storage=storage, config=repository,**self.driller_args
-        )
-        logger.info("---------- Driller Instantiated ----------")
-
-        driller.drill_repository()
-        driller.drill_commits(
-            filters=repository.get("filters", {}),
-            pydriller_filters=remove_none_values(repository.get("pydriller", {})),
+        driller: RepositoryDriller = self.driller_class(
+            repository_path=repository["path"],
+            storage=storage,
+            config=repository,
+            **self.driller_args,
         )
 
-        storage.close()
+        try:
+            driller.drill_repository()
+            driller.drill_commits(
+                filters=repository.get("filters", {}),
+                pydriller_filters=remove_none_values(repository.get("pydriller", {})),
+            )
+            storage.close()
+        except Exception as e:
+            logger.exception(e)
+            storage.close()
+            raise e
 
     def on_request(self, body):
         try:
             data = json.loads(body)
             job_id = data.get("job_id")
-            self.execute_drill_job(data.get("defaults"), data.get("repository"))
-
-            # logger.info(f"Drill Job Complete: {drill_job.project.project_id}")
-
-            response = {
-                "status": "complete",
-                "job_id": job_id,
-                "message": "Drilling complete.",
-            }
-            # response = f"Drilling Complete for job `{job_id}` ."
+            logger.info(f"Starting Drill Job: {data.get('name')}")
+            try:
+                self.execute_drill_job(data.get("defaults"), data.get("repository"))
+                response = {
+                    "status": "complete",
+                    "job_id": job_id,
+                    "message": "Drilling complete.",
+                }
+                logger.info(f"Drill Job Complete: {data.get('name')}")
+            except Exception as e:
+                logger.error(f"Drill Job Failed: {data.get('name')}")
+                response = {
+                    "status": "failed",
+                    "job_id": job_id,
+                    "message": "Drilling failed.",
+                }
             return json.dumps(response)
+
+            # response = f"Drilling Complete for job `{job_id}` ."
         except Exception as e:
             logger.exception(e)
             return json.dumps(
