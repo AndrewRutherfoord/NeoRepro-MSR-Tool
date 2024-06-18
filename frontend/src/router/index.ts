@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -8,6 +7,11 @@ const router = createRouter({
       path: '/',
       name: 'home',
       redirect: { name: 'query' }
+    },
+    {
+      path: '/manage-database',
+      name: 'manage-database',
+      component: () => import('../views/ManageDatabaseView.vue')
     },
     {
       path: '/editor',

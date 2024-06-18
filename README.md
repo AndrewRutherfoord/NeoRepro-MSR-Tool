@@ -76,3 +76,26 @@ Each repository can contain all of the fields from `defaults` but must also cont
 - `url`: Https url to the repository to clone it in the case it isn't already cloned.
 
 If any values are not provided in the repository, the default values from `defaults` will be used.
+
+
+
+## Working with Neo4j
+
+### Exporting the Database
+
+Exports the database to a file in the `import` directory of Neo4j.
+
+```cypher
+CALL apoc.export.cypher.all("all.cypher", {
+    format: "cypher-shell",
+    useOptimizations: {type: "UNWIND_BATCH", unwindBatchSize: 20}
+})
+YIELD file, batches, source, format, nodes, relationships, properties, time, rows, batchSize
+RETURN file, batches, source, format, nodes, relationships, properties, time, rows, batchSize;
+```
+
+### Importing the Database
+
+```cypher
+CALL apoc.import.cypher.all("all.cypher")
+```

@@ -41,7 +41,7 @@ services:
      - ./driller/:/app/driller/
     #  - ./driller/repos:/app/driller/repos
     deploy:
-      replicas: 2
+      replicas: 3
     # container_name: driller_worker
     depends_on:
       rabbitmq:
