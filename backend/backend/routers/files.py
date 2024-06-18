@@ -20,6 +20,7 @@ router = APIRouter()
 
 QUERIES_PATH = "queries"
 CONFIGS_PATH = "configs"
+DB_EXPORTS_PATH = "../neo4j_import"
 
 
 def get_file_list(path):
@@ -152,3 +153,10 @@ async def delete_query_file(path: str):
         delete_file(CONFIGS_PATH, path)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
+    
+# ----- DB Export Files -----
+
+@router.get("/db-exports/", response_model=dict)
+async def list_files():
+    return get_file_list(DB_EXPORTS_PATH)
+

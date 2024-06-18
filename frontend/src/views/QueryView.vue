@@ -21,20 +21,14 @@
       <hr>
       <v-container fluid class="rounded-0">
         <!-- Query Bar -->
-        <v-row class="my-2">
-          <v-col cols="10">
-            <cypher-code-mirror ref="editor" class="border-sm" v-model="content" />
-          </v-col>
-
-          <v-col class="d-flex align-center">
-
-            <v-btn color="blue" @click="executeQuery">Execute Query
-              <v-tooltip activator="parent" location="bottom">Execute query (Ctrl + Q)</v-tooltip>
-            </v-btn>
-            <v-btn density="compact" variant="plain" icon="mdi-content-save" class="ms-2" @click="saveQuery"></v-btn>
-            <v-btn density="compact" variant="plain" icon="mdi-information-outline" class="ms-2"></v-btn>
-          </v-col>
-        </v-row>
+        <cypher-code-mirror ref="editor" class="border-sm" v-model="content" />
+        <div class="my-2">
+          <v-btn color="blue" @click="executeQuery">Execute Query
+            <v-tooltip activator="parent" location="bottom">Execute query (Ctrl + Q)</v-tooltip>
+          </v-btn>
+          <v-btn density="compact" variant="plain" icon="mdi-content-save" class="ms-2" @click="saveQuery"></v-btn>
+          <v-btn density="compact" variant="plain" icon="mdi-information-outline" class="ms-2"></v-btn>
+        </div>
 
 
 
@@ -68,7 +62,7 @@ import { useRepositoryList } from '@/composables/useRepositoryList';
 import { useRoute, useRouter } from 'vue-router';
 
 import VueSplitter from '@rmp135/vue-splitter'
-import FileTreeSidebar from '../components/FileTreeSidebar.vue'
+import FileTreeSidebar from '../components/FileTreeList.vue'
 import CypherCodeMirror from '../components/CypherCodeMirror.vue';
 import QueryDataDialog from '../components/QueryDataDialog.vue'
 import { QueryFileRepository } from '@/repositores/FileRepository';

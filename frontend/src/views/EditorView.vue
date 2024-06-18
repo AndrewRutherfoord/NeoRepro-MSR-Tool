@@ -44,7 +44,7 @@ import { useToast } from '@/composables/useToast';
 
 import { ConfigurationFileRepository } from '../repositores/FileRepository'
 
-import FileTreeSidebar from '../components/FileTreeSidebar.vue'
+import FileTreeSidebar from '../components/FileTreeList.vue'
 import VueSplitter from '@rmp135/vue-splitter'
 
 import initial from '../assets/initial.yaml?raw'

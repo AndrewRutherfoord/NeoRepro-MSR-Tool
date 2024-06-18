@@ -63,6 +63,7 @@ services:
      - ./backend/:/app/backend/
      - ./queries:/app/backend/queries
      - ./configs:/app/backend/configs
+     - ./neo4j_db/import/:/app/neo4j_import/
     depends_on:
       neo4j:
         condition: service_started

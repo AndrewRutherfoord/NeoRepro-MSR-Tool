@@ -46,22 +46,24 @@ export function useNeo4j(uri: string, user: string, password: string) {
 
       if (resultSet.records.length > 0) {
         headers.value = resultSet.records[0].keys
-        console.log(headers.value)
       }
-    } catch (err) {
-      error.value = err
-    } finally {
+      
       loading.value = false
+      return resultSet
+    } catch (err) {
+      loading.value = false
+      error.value = err
+      throw err
     }
   }
 
   onMounted(() => {
-    initialize();
-  });
-  
+    initialize()
+  })
+
   onBeforeUnmount(() => {
-    close();
-  });
+    close()
+  })
 
   return {
     initialize,

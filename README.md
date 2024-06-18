@@ -23,6 +23,14 @@ Run the docker container:
 docker compose up -d
 ```
 
+### Change the permissions of the import directory
+
+This is necessary so that the backend can access the import directory.
+
+```bash
+chmod -R 775 neo4j_db/import/
+```
+
 ## The Configuration Syntax
 
 The configuration file is a YAML file that contains the following fields:
