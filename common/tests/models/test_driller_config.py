@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from common.models.driller_config import (
     DrillConfig,
@@ -83,7 +84,7 @@ def test_apply_bool_defaults():
 def test_apply_none_pydriller_defaults():
     defaults = DefaultsConfig(
         pydriller=PydrillerConfig(
-            since="2022-01-01",
+            to_commit="hash",
             from_commit="abc123",
         )
     )
@@ -98,29 +99,31 @@ def test_apply_none_pydriller_defaults():
     conf.apply_defaults(defaults)
 
     assert conf.pydriller is not None
-    assert conf.pydriller.since == "2022-01-01"
+    assert conf.pydriller.to_commit == "hash" 
     assert conf.pydriller.from_commit == "abc123"
 
 
 def test_apply_pydriller_defaults():
     defaults = DefaultsConfig(
-        pydriller=PydrillerConfig(since="2022-01-01", to_commit="some-hash")
+        pydriller=PydrillerConfig(
+            to_tag="default-tag", to_commit="default-to-commit-hash"
+        )
     )
 
     conf = RepositoryConfig(
         name="test",
         url="https://github.com/test/test.git",
         pydriller=PydrillerConfig(
-            since="2023-01-01",
-            to="2023-01-02",
+            from_commit="from-commit-hash",
+            to_commit="to-commit-hash",
         ),
     )
 
     conf.apply_defaults(defaults)
 
-    assert conf.pydriller.since == "2023-01-01"
-    assert conf.pydriller.to_commit == "some-hash"
-    assert conf.pydriller.to == "2023-01-02"
+    assert conf.pydriller.to_tag == "default-tag"
+    assert conf.pydriller.to_commit == "to-commit-hash"
+    assert conf.pydriller.from_commit == "from-commit-hash"
 
 
 def test_apply_none_filters_defaults():
@@ -165,12 +168,32 @@ def test_parse_single_drill_config_json():
     }
 
     json_data = json.dumps(data)
-    
+
     config = SingleDrillConfig.model_validate_json(json_data)
-    
+
     assert config.job_id == "test"
     assert config.repository.name == "test"
     assert config.defaults is None
     assert config.repository.pydriller is not None
+
+
+def test_pydriller_config_parse_dates():
+    data = {
+        "since": "2023-01-01",
+        "to": "2023-01-02",
+    }
+
+    config = PydrillerConfig.model_validate(data)
+
+    assert config.since == datetime(2023, 1, 1)
+    assert config.to == datetime(2023, 1, 2)
+    
+def test_pydriller_config_serialize_date():
+    config = PydrillerConfig(since=datetime(2023,1,1), to=datetime(2023,1,2))
+
+    config_json = json.loads(config.model_dump_json())
+    
+    assert config_json["since"] == "2023-01-01"
+    assert config_json["to"] == "2023-01-02"
     
     

@@ -31,7 +31,7 @@ from common.models.jobs import (
     JobStatusDetails,
     JobStatusOverview,
 )
-from common.models.driller_config import DrillConfig
+from common.models.driller_config import DrillConfig, SingleDrillConfig
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -117,27 +117,17 @@ async def create_jobs(
     background_tasks: BackgroundTasks,
     request: Request
 ):
-    logger.warning("CREATE")
-    drill_config_dict = drill_config.model_dump()
-    jobs_list = []
-    for repo_config in drill_config_dict["repositories"]:
-        logger.warning(repo_config)
-        # job_dict = {
-        #     "defaults": drill_config.defaults.model_dump_json(),
-        #     "repository": repo_config.model_dump_json(),
-        # }
-        job_dict = {
-            "defaults": drill_config_dict["defaults"],
-            "repository": repo_config,
-        }
+    job_list = []
+    for repository in drill_config.repositories:
+        single_job = SingleDrillConfig(defaults=drill_config.defaults, repository=repository)
 
-        db_job = Job.model_validate(JobCreate(name=repo_config["name"], data=job_dict))
+        db_job = Job.model_validate(JobCreate(name=repository.name, data=single_job.model_dump()))
 
         session.add(db_job)
         session.commit()
         session.refresh(db_job)
 
-        job_dict["job_id"] = db_job.id
+        single_job.job_id = db_job.id
 
         db_job_status = JobStatus(job_id=db_job.id)
         session.add(db_job_status)
@@ -146,18 +136,22 @@ async def create_jobs(
 
         background_tasks.add_task(
             request.state.driller_client.call,
-            json.dumps(job_dict),
+            single_job.model_dump(),
         )
 
-        jobs_list.append(
+        job_list.append(
             JobList(
                 id=db_job.id,
                 name=db_job.name,
                 data=db_job.data,
-                statuses=[JobStatusOverview(status=db_job_status.status, timestamp=db_job_status.timestamp)],
+                statuses=[
+                    JobStatusOverview(
+                        status=db_job_status.status, timestamp=db_job_status.timestamp
+                    )
+                ],
             )
         )
 
     # result = await driller_client.call(body)
-    return jobs_list
+    return job_list
     # return Response(jobs_list, status_code=201)
