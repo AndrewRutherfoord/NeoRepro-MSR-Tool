@@ -39,6 +39,7 @@ async def main():
     storage_class = get_class(CONFIGS.get("REPOSITORY_STORAGE_CLASS"))
     driller_class = get_class(CONFIGS.get("REPOSITORY_DRILLER_CLASS"))
     worker_class = get_class(CONFIGS.get("WORKER_CLASS"))
+    print("TEST2")
 
     worker: QueueWorker = worker_class(
         host=RABBITMQ_HOST,
@@ -56,7 +57,6 @@ async def main():
 
 def exec():
     asyncio.run(main())
-
 
 if __name__ == "__main__":
     asyncio.run(main())
