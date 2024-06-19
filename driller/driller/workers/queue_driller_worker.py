@@ -1,12 +1,9 @@
 import json
 import logging
 
-import pika
+from pydantic import ValidationError
 
 from driller.cloner import clone_repository
-from driller.drillers.driller import (
-    RepositoryDataStorage,
-)
 
 from driller.drillers.driller import RepositoryDriller
 from driller.drillers.storage import RepositoryNeo4jStorage
@@ -14,9 +11,10 @@ from driller.drillers.storage import RepositoryNeo4jStorage
 from driller.settings.default import (
     REPO_CLONE_LOCATION,
 )
-from driller.util import get_class, remove_none_values
-from ..driller_config import DrillConfig, Neo4jConfig
+from driller.util import remove_none_values
 from .queue_worker import QueueWorker
+
+from common.models.driller_config import SingleDrillConfig, RepositoryConfig
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +38,7 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
         self.driller_args = driller_args
         self.storage_class = storage_class
         self.storage_args = storage_args
-        
+
         self.clone_location = clone_location
 
     def apply_defaults(self, defaults: dict, repository: dict):
@@ -49,30 +47,25 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
                 repository[key] = value
         return repository
 
-    def execute_drill_job(self, defaults, repository):
+    def execute_drill_job(self, drill_config: SingleDrillConfig):
+        
+        repository: RepositoryConfig = drill_config.repository
+        repository.apply_defaults(drill_config.defaults)
+        
+        repo_path = f"{self.clone_location}{repository.name}"
 
-        repository = self.apply_defaults(defaults, repository)
-
-        if "path" in repository:
-            logger.error("Path cannot be set outside driller.")
-            raise ValueError("Path cannot be set outside driller.")
-
-        repository["path"] = f"{self.clone_location}{repository['name']}"
-
-        if repository.get("url", None) is not None:
+        if repository.url is not None:
             clone_repository(
-                repository_url=repository["url"], repository_location=repository["path"]
+                repository_url=repository.url, repository_location=repo_path
             )
-            logger.debug(
-                f"Cloned Repository {repository['name']} to `{repository['path']}`"
-            )
+            logger.debug(f"Cloned Repository {repository.name} to `{repo_path}`")
 
         # Instantiate the storage class where the drilled data will be written
         storage = self.storage_class(**self.storage_args)
 
         # Instantiate the driller class. Drills the repository and writes the data to the storage class.
         driller: RepositoryDriller = self.driller_class(
-            repository_path=repository["path"],
+            repository_path=repo_path,
             storage=storage,
             config=repository,
             **self.driller_args,
@@ -81,8 +74,8 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
         try:
             driller.drill_repository()
             driller.drill_commits(
-                filters=repository.get("filters", {}),
-                pydriller_filters=remove_none_values(repository.get("pydriller", {})),
+                filters=repository.filters,
+                pydriller_filters=repository.pydriller,
             )
             storage.close()
         except Exception as e:
@@ -90,21 +83,30 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
             storage.close()
             raise e
 
-    def on_request(self, body):
+    def parse_message(self, message) -> SingleDrillConfig:
         try:
-            data = json.loads(body)
-            job_id = data.get("job_id")
-            logger.info(f"Starting Drill Job: {data.get('name')}")
+            return SingleDrillConfig.model_validate_json(message)
+        except ValidationError as e:
+            logger.exception(e)
+            raise e
+
+    def on_request(self, body):
+        job_id = None
+        try:
+            drill_config = self.parse_message(body)
+            job_id = drill_config.job_id
+            logger.info(f"Starting Drill Job: {drill_config.repository.name}")
             try:
-                self.execute_drill_job(data.get("defaults"), data.get("repository"))
+                self.execute_drill_job(drill_config)
                 response = {
                     "status": "complete",
                     "job_id": job_id,
                     "message": "Drilling complete.",
                 }
-                logger.info(f"Drill Job Complete: {data.get('name')}")
+                logger.info(f"Drill Job Complete: {drill_config.repository.name}")
             except Exception as e:
-                logger.error(f"Drill Job Failed: {data.get('name')}")
+                logger.exception(e)
+                logger.error(f"Drill Job Failed: {drill_config.repository.name}")
                 response = {
                     "status": "failed",
                     "job_id": job_id,

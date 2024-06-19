@@ -156,7 +156,7 @@ def test_apply_none_filters_defaults():
 
 def test_parse_single_drill_config_json():
     data = {
-        "job_id": "test",
+        "job_id": 1,
         "repository": {
             "name": "test",
             "url": "https://github.com/test/test.git",
@@ -171,7 +171,7 @@ def test_parse_single_drill_config_json():
 
     config = SingleDrillConfig.model_validate_json(json_data)
 
-    assert config.job_id == "test"
+    assert config.job_id == 1
     assert config.repository.name == "test"
     assert config.defaults is None
     assert config.repository.pydriller is not None

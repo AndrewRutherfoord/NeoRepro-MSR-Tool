@@ -1,7 +1,14 @@
 from enum import Enum
-from pydantic import BaseModel, ValidationError, field_validator, field_serializer
+from pydantic import (
+    BaseModel,
+    ValidationError,
+    field_validator,
+    field_serializer,
+    ConfigDict,
+)
 from typing import List, Optional
 from datetime import datetime
+
 
 class PydrillerConfig(BaseModel):
     since: Optional[datetime] = None
@@ -17,18 +24,21 @@ class PydrillerConfig(BaseModel):
     only_release: Optional[bool] = None
     filepath: Optional[str] = None
     only_modifications_with_file_types: Optional[list[str]] = None
-    
-    @field_validator('since', 'to') 
+
+    @field_validator("since", "to")
     def parse_dates(cls, value):
+        """Parses datetime strings of the format YYYY-MM-DD."""
+
         if isinstance(value, str):
-            return datetime.strptime(value, '%Y-%m-%d')
+            return datetime.strptime(value, "%Y-%m-%d")
         return value
 
-    @field_serializer('since', 'to')
+    @field_serializer("since", "to")
     def serialize_dt(self, dt: datetime, _info):
+        """Converts the datetime object to a string in the format of YYYY-MM-DD."""
         if dt is None:
             return None
-        return dt.strftime('%Y-%m-%d')
+        return dt.strftime("%Y-%m-%d")
 
     def apply_defaults(self, defaults):
         for attr in vars(defaults):
@@ -72,7 +82,6 @@ class DefaultsConfig(BaseModel):
 class RepositoryConfig(DefaultsConfig):
     name: str
     url: Optional[str] = None
-    path: str = None
 
     # Have to set to None because to make it optional
     delete_clone: Optional[bool] = None
@@ -112,7 +121,7 @@ class SingleDrillConfig(BaseModel):
     defaults: Optional[DefaultsConfig] = None
     repository: RepositoryConfig
 
-    job_id: Optional[str] = None
+    job_id: Optional[int] = None
 
     def apply_defaults(self):
         """Applies the defaults to the repository config.

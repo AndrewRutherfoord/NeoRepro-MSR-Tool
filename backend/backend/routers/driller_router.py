@@ -136,7 +136,7 @@ async def create_jobs(
 
         background_tasks.add_task(
             request.state.driller_client.call,
-            single_job.model_dump(),
+            single_job.model_dump_json(),
         )
 
         job_list.append(

@@ -82,6 +82,7 @@ class DrillerClient(object):
 
     async def call(self, body : str) -> str:
         correlation_id = str(uuid.uuid4())
+        logger.debug(f"Sending message {correlation_id}: {body}")
 
         await self.channel.default_exchange.publish(
             Message(
