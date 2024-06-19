@@ -3,6 +3,11 @@
     <!-- <div class="container-fluid mt-2"> -->
     <v-app-bar>
         <v-app-bar-title>Jobs</v-app-bar-title>
+
+        <v-spacer></v-spacer>
+
+        <v-btn color="primary" @click="deleteAllJobs()">Delete All Jobs</v-btn>
+
     </v-app-bar>
 
 
@@ -17,6 +22,9 @@
         <template v-slot:item.button="{ item }">
             <v-btn color="primary" size="small" class="mx-2" @click="showDialog(item)">View</v-btn>
             <v-btn color="red-darken-2" size="small" class="mx-2" @click="deleteJob(item.id)">Delete</v-btn>
+        </template>
+        <template v-slot:bottom>
+            <v-data-table-footer></v-data-table-footer>
         </template>
     </v-data-table>
 
@@ -89,7 +97,7 @@ async function deleteJob(id: number) {
     if (ok) {
 
         try {
-            await axios.delete(`/jobs/${id}/`)
+            await jobsRepository.delete(id)
             fetchItems();
         } catch (e) {
             console.error(e)
@@ -107,6 +115,20 @@ function getStatusChipColor(status: string) {
         default:
             return "secondary";
     }
+}
+
+async function deleteAllJobs() {
+    let ok = confirm("Are you sure you want to delete all jobs in the database? (This will only delete the info from the database. It will not undo the work.)")
+    if (ok) {
+
+        try {
+            await jobsRepository.deleteAll()
+            fetchItems();
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
 }
 
 </script>

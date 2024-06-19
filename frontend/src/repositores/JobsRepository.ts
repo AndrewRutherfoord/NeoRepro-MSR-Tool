@@ -32,7 +32,7 @@ export class JobsRepository
     return this.http.get(``)
   }
 
-  async getById(id: string): Promise<AxiosResponse<Job>> {
+  async getById(id: string | number): Promise<AxiosResponse<Job>> {
     return this.http.get(`${id}`)
   }
 
@@ -40,7 +40,11 @@ export class JobsRepository
     return this.http.post(``, data)
   }
 
-  async delete(id: string): Promise<AxiosResponse<void>> {
+  async delete(id: string | number): Promise<AxiosResponse<void>> {
     return this.http.delete(`${id}`)
+  }
+
+  async deleteAll(): Promise<AxiosResponse<void>> {
+    return this.http.delete(``)
   }
 }

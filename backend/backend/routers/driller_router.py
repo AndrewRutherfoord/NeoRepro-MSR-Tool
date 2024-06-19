@@ -64,6 +64,14 @@ def list_jobs(
     return items
 
 
+@router.delete("/jobs/")
+def delete_all_jobs(*, session: Session = Depends(get_session)):
+    results = session.exec(select(Job))
+    for r in results:
+        session.delete(r)
+    session.commit()
+    return Response(status_code=200)
+
 @router.delete("/jobs/{job_id}")
 def delete_job(*, session: Session = Depends(get_session), job_id: int):
     job = session.get(Job, job_id)
