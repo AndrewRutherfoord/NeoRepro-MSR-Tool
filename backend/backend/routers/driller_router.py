@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from enum import Enum
 import json
+from typing import List
 
 from fastapi import (
     APIRouter,
@@ -16,6 +17,7 @@ import logging
 
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from sqlalchemy import case, func
 from sqlmodel import Session, select, delete
 from sqlalchemy.orm import selectinload
 
@@ -30,6 +32,7 @@ from common.models.jobs import (
     JobStatus,
     JobStatusDetails,
     JobStatusOverview,
+    JobStatusEnum,
 )
 from common.models.driller_config import DrillConfig, SingleDrillConfig
 
@@ -43,11 +46,62 @@ def list_jobs(
     *,
     session: Session = Depends(get_session),
     offset: int = 0,
-    limit: int = Query(default=100, le=100)
+    limit: int = Query(default=100, le=100),
+    statuses: List[str] = Query(default=[], description="Statuses of the job"),
 ):
-    result = session.exec(
-        select(Job).options(selectinload(Job.job_statuses)).offset(offset).limit(limit)
-    ).all()
+    subquery = (
+        select(JobStatus.job_id, func.max(JobStatus.timestamp).label("max_timestamp"))
+        .group_by(JobStatus.job_id)
+        .subquery()
+    )
+
+    latest_statuses = (
+        select(JobStatus)
+        .join(
+            subquery,
+            (JobStatus.job_id == subquery.c.job_id)
+            & (JobStatus.timestamp == subquery.c.max_timestamp),
+        )
+        .subquery()
+    )
+
+    status_order = case(
+        (latest_statuses.c.status == JobStatusEnum.STARTED, 1),
+        (latest_statuses.c.status == JobStatusEnum.PENDING, 2),
+        (latest_statuses.c.status == JobStatusEnum.FAILED, 3),
+        (latest_statuses.c.status == JobStatusEnum.COMPLETE, 4),
+        else_=5,
+    )
+
+    base_statement = select(Job).join(
+        latest_statuses, Job.id == latest_statuses.c.job_id
+    )
+
+    if statuses:
+        try:
+            status_enum_list = [JobStatusEnum(status) for status in statuses]
+        except ValueError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"One or more statuses are not valid: {statuses}",
+            )
+        base_statement = base_statement.where(
+            latest_statuses.c.status.in_(status_enum_list)
+        )
+
+    # Query to get the total count of jobs matching the criteria
+    count_statement = select(func.count()).select_from(base_statement.subquery())
+    total = session.exec(count_statement).one()
+
+    # Apply pagination
+    statement = (
+        base_statement.order_by(status_order)
+        .offset(offset)
+        .limit(limit)
+        .options(selectinload(Job.job_statuses))
+    )
+
+    result = session.exec(statement).all()
 
     # logger.warning(result)
     items = []
@@ -58,19 +112,9 @@ def list_jobs(
         items.append(
             JobList(id=job.id, name=job.name, data=job.data, statuses=job.job_statuses)
         )
-    # job = result[0]
-    # latest_status = result[1]
 
-    return items
+    return {"items": items, "total": total}
 
-
-@router.delete("/jobs/")
-def delete_all_jobs(*, session: Session = Depends(get_session)):
-    results = session.exec(select(Job))
-    for r in results:
-        session.delete(r)
-    session.commit()
-    return Response(status_code=200)
 
 @router.delete("/jobs/{job_id}")
 def delete_job(*, session: Session = Depends(get_session), job_id: int):
@@ -99,37 +143,23 @@ def detail_job(*, session: Session = Depends(get_session), job_id: int):
     return job
 
 
-@router.post("/jobs/status/")
-def create_job_status(
-    *, session: Session = Depends(get_session), job_status: JobStatus
-):
-    session.add(job_status)
-    session.commit()
-    session.refresh(job_status)
-    return job_status
-
-
-@router.get("/jobs/status/{job_status_id}", response_model=JobStatusDetails)
-def detail_job_status(*, session: Session = Depends(get_session), job_status_id: int):
-    job_status = session.get(JobStatus, job_status_id)
-    if not job_status:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return job_status
-
-
 @router.post("/jobs/", response_model=list[JobList])
 async def create_jobs(
     *,
     session: Session = Depends(get_session),
     drill_config: DrillConfig,
     background_tasks: BackgroundTasks,
-    request: Request
+    request: Request,
 ):
     job_list = []
     for repository in drill_config.repositories:
-        single_job = SingleDrillConfig(defaults=drill_config.defaults, repository=repository)
+        single_job = SingleDrillConfig(
+            defaults=drill_config.defaults, repository=repository
+        )
 
-        db_job = Job.model_validate(JobCreate(name=repository.name, data=single_job.model_dump()))
+        db_job = Job.model_validate(
+            JobCreate(name=repository.name, data=single_job.model_dump())
+        )
 
         session.add(db_job)
         session.commit()

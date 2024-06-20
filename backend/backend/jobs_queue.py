@@ -5,14 +5,18 @@ from aio_pika import IncomingMessage, Message, connect, Channel, RobustConnectio
 
 from aio_pika import Message, connect
 from aio_pika.abc import (
-    AbstractChannel, AbstractConnection, AbstractIncomingMessage, AbstractQueue,
+    AbstractChannel,
+    AbstractConnection,
+    AbstractIncomingMessage,
+    AbstractQueue,
 )
 
 import logging
 
 from sqlmodel import Session
 from backend.database import engine, get_session
-from common.models.jobs import Job, JobStatus
+from backend.ws_connection_manager import socket_connections
+from common.models.jobs import Job, JobStatus, JobDetails
 
 logger = logging.getLogger(__name__)
 
@@ -48,15 +52,16 @@ class RabbitMQManager:
         # Start consuming messages
         return await self._callback_queue.consume(callback)
 
+
 class DrillerClient(object):
     queue = "driller_queue"
     connection: AbstractConnection
     channel: AbstractChannel
     callback_queue: AbstractQueue
-    
+
     def __init__(self) -> None:
         self.futures: MutableMapping[str, asyncio.Future] = {}
-    
+
     async def connect(self) -> "DrillerClient":
         self.connection = await connect("amqp://guest:guest@localhost:5672/")
         self.channel = await self.connection.channel()
@@ -75,12 +80,22 @@ class DrillerClient(object):
         job_id = response.get("job_id")
         status = response.get("status")
         with Session(engine) as session:
-            job_status = JobStatus(job_id=job_id, status =status)
+            job_status = JobStatus(job_id=job_id, status=status)
             session.add(job_status)
             session.commit()
             session.refresh(job_status)
 
-    async def call(self, body : str) -> str:
+            job = session.get(Job, job_id)
+
+        await socket_connections.send_message(
+            {
+                "job_status": job_status.model_dump(),
+                "job": job.model_dump(),
+            },
+            ws_token="1",
+        )
+
+    async def call(self, body: str) -> str:
         correlation_id = str(uuid.uuid4())
         logger.debug(f"Sending message {correlation_id}: {body}")
 
@@ -93,8 +108,7 @@ class DrillerClient(object):
             ),
             routing_key=self.queue,
         )
-    
+
     async def close(self):
         self.channel.close()
         self.connection.close()
-        

@@ -10,7 +10,7 @@ from sqlmodel import Session, select
 
 from backend.database import create_db_and_tables, engine
 from backend.jobs_queue import DrillerClient
-from backend.routers import driller_router, files
+from backend.routers import driller_router, files,job_statuses
 
 logger = logging.getLogger(__name__)
 
@@ -35,16 +35,18 @@ async def teardown_jobs_queue():
     driller_client = None
 
 
-async def get_client(request: Request) -> DrillerClient:
-    global driller_client
+async def get_client(request: Request = None) -> DrillerClient:
+    if request is not None:
+        global driller_client
 
-    if driller_client is None or driller_client.connection.is_closed:
-        driller_client = await DrillerClient().connect()
-        logger.warning("Setting client")
+        if driller_client is None or driller_client.connection.is_closed:
+            driller_client = await DrillerClient().connect()
+            logger.warning("Setting client")
 
-    # Sets the drill client state in request. Can be accessed in endpoint with request injection and `request.state.driller_client`
-    request.state.driller_client = driller_client
-    return driller_client
+        # Sets the drill client state in request. Can be accessed in endpoint with request injection and `request.state.driller_client`
+        request.state.driller_client = driller_client
+        return driller_client
+    return None
 
 
 # ---------- FastAPi ----------
@@ -67,6 +69,7 @@ app = FastAPI(
 
 app.include_router(driller_router.router)
 app.include_router(files.router)
+app.include_router(job_statuses.router)
 
 origins = [
     "http://localhost:5173",

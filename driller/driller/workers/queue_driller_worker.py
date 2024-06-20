@@ -1,6 +1,7 @@
 import json
 import logging
 
+import aio_pika
 from pydantic import ValidationError
 
 from driller.cloner import clone_repository
@@ -48,10 +49,10 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
         return repository
 
     def execute_drill_job(self, drill_config: SingleDrillConfig):
-        
+
         repository: RepositoryConfig = drill_config.repository
         repository.apply_defaults(drill_config.defaults)
-        
+
         repo_path = f"{self.clone_location}{repository.name}"
 
         if repository.url is not None:
@@ -90,7 +91,24 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
             logger.exception(e)
             raise e
 
-    def on_request(self, body):
+    async def on_before_start_job(
+        self, job_body, message: aio_pika.abc.AbstractIncomingMessage
+    ):
+        drill_config = self.parse_message(job_body)
+
+        await self.exchange.publish(
+            aio_pika.Message(
+                body=json.dumps({
+                    "status": "started",
+                    "job_id": drill_config.job_id,
+                    "message": "Drilling started.",
+                }).encode(),
+                correlation_id=message.correlation_id,
+            ),
+            routing_key=message.reply_to,
+        )
+
+    def on_request(self, body, message):
         job_id = None
         try:
             drill_config = self.parse_message(body)

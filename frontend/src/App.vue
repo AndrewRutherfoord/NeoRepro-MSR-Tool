@@ -1,9 +1,3 @@
-<script setup lang="ts">
-import { ref } from 'vue'
-import SidebarNav from './components/SidebarNav.vue'
-import { Notifications } from '@kyvg/vue3-notification';
-</script>
-
 <template>
   <v-card>
     <v-layout>
@@ -16,3 +10,35 @@ import { Notifications } from '@kyvg/vue3-notification';
   </v-card>
   <Notifications class="ma-3" position="bottom right" />
 </template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useWebSocket } from '@vueuse/core'
+import { useToast } from '@/composables/useToast';
+import SidebarNav from './components/SidebarNav.vue'
+import { Notifications } from '@kyvg/vue3-notification';
+
+const messages = ref<string[]>([])
+
+const toast = useToast()
+
+// function onMessage(ws: WebSocket, event: MessageEvent) {
+//   let message = JSON.parse(event.data)
+//   messages.value.push(message)
+//   console.log(message)
+
+//   if (message.job_status.status === 'complete') {
+//     toast.success(`Drilling of '${message.job.name}' is complete.`)
+//   } else if (message.job_status.status === 'started') {
+//     toast.success(`Drilling of '${message.job.name}' started.`)
+//   } else if (message.job_status.status === 'error') {
+//     toast.error(message.message)
+//   } else if (message.job_status.status === 'warning') {
+//     toast.warn(message.message)
+//   }
+// }
+
+// const { status, data, send, open, close } = useWebSocket('ws://127.0.0.1:8000/notifications', { onMessage })
+
+
+</script>

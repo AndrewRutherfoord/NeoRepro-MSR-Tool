@@ -3,6 +3,7 @@ import hashlib
 import logging
 
 from neo4j import GraphDatabase
+from neo4j.exceptions import TransientError
 from pydriller import Commit
 from pydriller.domain.commit import ModifiedFile
 
@@ -88,13 +89,23 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
 
     def _process_batch(self):
         """Runs a batch of cypher commands on the Neo4j DB."""
-        logger.debug("Processing Batch")
-        if self.batch:
-            with self.driver.session() as session:
-                with session.begin_transaction() as tx:
-                    for operation in self.batch:
-                        tx.run(*operation)
-            self.batch = []
+        try_again = 3
+        while try_again > 0:
+            logger.debug("Processing Batch")
+            try:
+                if self.batch:
+                    with self.driver.session() as session:
+                        with session.begin_transaction() as tx:
+                            for operation in self.batch:
+                                tx.run(*operation)
+                    self.batch = []
+                return
+            except TransientError as e:
+                logger.exception("Encountered a TransientError", e)
+                try_again -= 1
+                if try_again == 0:
+                    raise e
+            
 
     def store_repository(self, repo_name):
         self._add_to_batch("MERGE (r:Repository {name: $name})", {"name": repo_name})

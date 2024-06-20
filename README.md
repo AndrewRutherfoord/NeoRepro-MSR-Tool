@@ -100,7 +100,7 @@ If any values are not provided in the repository, the default values from `defau
 
 Exports the database to a file in the `import` directory of Neo4j.
 
-```cypher
+```
 CALL apoc.export.cypher.all("all.cypher", {
     format: "cypher-shell",
     useOptimizations: {type: "UNWIND_BATCH", unwindBatchSize: 20}
@@ -111,6 +111,6 @@ RETURN file, batches, source, format, nodes, relationships, properties, time, ro
 
 ### Importing the Database
 
-```cypher
+```
 CALL apoc.import.cypher.all("all.cypher")
 ```

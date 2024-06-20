@@ -34,9 +34,17 @@ class JobCreate(JobBase):
 
 
 class JobStatusEnum(str, Enum):
+    STARTED = "started"
     PENDING = "pending"
     COMPLETE = "complete"
     FAILED = "failed"
+
+    @classmethod
+    def from_string(cls, status_str):
+        try:
+            return cls(status_str)
+        except ValueError:
+            raise ValueError(f"'{status_str}' is not a valid {cls.__name__}")
 
 
 class JobStatusBase(SQLModel):
@@ -53,8 +61,10 @@ class JobStatus(JobStatusBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     job: Job | None = Relationship(back_populates="job_statuses")
 
+
 class JobStatusOverview(JobStatusBase):
     pass
+
 
 class JobStatusDetails(JobStatusBase):
     job: JobBase | None

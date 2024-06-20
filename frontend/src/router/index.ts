@@ -24,10 +24,15 @@ const router = createRouter({
       component: () => import('../views/JobsListView.vue')
     },
     {
+      path: '/jobs/complete',
+      name: 'jobs-complete-list',
+      component: () => import('../views/JobsCompleteListView.vue')
+    },
+    {
       path: '/query',
       name: 'query',
       component: () => import('../views/QueryView.vue')
-    }
+    },
   ]
 })
 

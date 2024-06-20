@@ -13,6 +13,11 @@
         <v-divider></v-divider>
         <template v-slot:append>
             <v-list density="compact" nav>
+                <!-- <v-list-item title="Notifications" prepend-icon="mdi-message" :to="{ name: 'notifications' }">
+                    <template v-slot:prepend>
+                        <v-badge color="error" content="6"><v-icon>mdi-message</v-icon></v-badge>
+                    </template>
+                </v-list-item> -->
                 <v-list-item title="Toggle Theme" prepend-icon="mdi-theme-light-dark"
                     @click="toggleTheme"></v-list-item>
             </v-list>
@@ -56,6 +61,10 @@ const theme = useTheme()
 
 function toggleTheme() {
     theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
+}
+
+function showNotifications() {
+    console.log("show notifications")
 }
 
 </script>

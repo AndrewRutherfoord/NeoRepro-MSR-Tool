@@ -1,5 +1,5 @@
 // src/composables/useFetchList.ts
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, type Ref } from 'vue'
 import type { AxiosResponse } from 'axios'
 import type { BaseListRepository } from '@/repositores/BaseListRepository'
 
@@ -8,7 +8,11 @@ import type { BaseListRepository } from '@/repositores/BaseListRepository'
  *
  * @param repositoryInstance instance of BaseRepository on which the getAll method is called
  */
-export function useRepositoryList<ListType>(repository: BaseListRepository<ListType>) {
+export function useRepositoryList<ListType>(
+  repository: BaseListRepository<ListType>,
+  options: Ref<any> = ref({}),
+  instant: boolean = true
+) {
   const items = ref<ListType[]>([])
   const loading = ref(true)
   const error = ref<string | null>(null)
@@ -23,7 +27,7 @@ export function useRepositoryList<ListType>(repository: BaseListRepository<ListT
   const fetchItems = async () => {
     loading.value = true
     try {
-      const response: AxiosResponse<ListType[]> = await repository.getAll()
+      const response: AxiosResponse<ListType[]> = await repository.getAll(options.value) 
       items.value = response.data
       loading.value = false
     } catch (err) {

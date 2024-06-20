@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from abc import ABC, abstractmethod
 
@@ -16,7 +17,7 @@ class QueueWorker(ABC):
 
         self.connection = None
         self.channel = None
-        
+
         self.heartbeat_interval = heartbeat_interval
         self.heartbeat_task = None
 
@@ -46,6 +47,7 @@ class QueueWorker(ABC):
     def on_request(
         self,
         body: str,
+        message: aio_pika.abc.AbstractIncomingMessage,
     ) -> str:
         """
         Processes a queue item when received from the exchange.
@@ -57,6 +59,41 @@ class QueueWorker(ABC):
         """
         pass
 
+    async def send_response(
+        self, message: aio_pika.abc.AbstractIncomingMessage, response: str
+    ):
+        logger.info(f"Sending response: {response}")
+        await self.exchange.publish(
+            aio_pika.Message(
+                body=response.encode(),
+                correlation_id=message.correlation_id,
+            ),
+            routing_key=message.reply_to,
+        )
+
+    async def on_before_start_job(
+        self, job_body, message: aio_pika.abc.AbstractIncomingMessage
+    ):
+        logger.debug(f"Job started: {job_body}")
+
+    async def on_after_finish_job(
+        self, job_response: str, message: aio_pika.abc.AbstractIncomingMessage
+    ):
+        logger.debug("Request complete")
+
+        await self.exchange.publish(
+            aio_pika.Message(
+                body=job_response.encode(),
+                correlation_id=message.correlation_id,
+            ),
+            routing_key=message.reply_to,
+        )
+
+    async def on_job_failed(
+        self, exception, message: aio_pika.abc.AbstractIncomingMessage
+    ):
+        logger.exception("Job failed: %s", exception)
+
     async def consume_jobs(self):
         async with self.queue.iterator() as qiterator:
             message: aio_pika.abc.AbstractIncomingMessage
@@ -66,31 +103,20 @@ class QueueWorker(ABC):
                         assert message.reply_to is not None
 
                         body = message.body.decode()
-                        logger.debug(f"Message received: {body}.")
 
-                        # response = self.on_request(body)
-                        response = await self.handle_request(body)
+                        await self.handle_request(body, message)
+                except Exception as e:
+                    await self.on_job_failed(e, message)
 
-                        await self.exchange.publish(
-                            aio_pika.Message(
-                                body=response.encode(),
-                                correlation_id=message.correlation_id,
-                            ),
-                            routing_key=message.reply_to,
-                        )
-                        logger.debug("Request complete")
-                except Exception:
-                    logging.exception("Processing error for message %r", message)
-        # self.channel.queue_declare(queue=self.queue)
-
-        # self.channel.basic_qos(prefetch_count=1)
-        # self.channel.basic_consume(queue=self.queue, on_message_callback=self.on_request)
-
-        # logger.info(f"Awaiting Tasks on queue '{self.queue}'.")
-        # self.channel.start_consuming()
-    async def handle_request(self, body):
+    async def handle_request(self, body, message):
         loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(None, self.on_request, body)
+        
+        await self.on_before_start_job(body, message)
+        
+        response = await loop.run_in_executor(None, self.on_request, body, message)
+        
+        await self.on_after_finish_job(response, message)
+
         return response
 
     async def send_heartbeat(self):
@@ -106,7 +132,7 @@ class QueueWorker(ABC):
         while True:
             await asyncio.sleep(self.heartbeat_interval)
             await self.channel.heartbeat_tick()
-        
+
     async def start(self):
         await self.connect()
         self.heartbeat_task = asyncio.create_task(self.heartbeat())

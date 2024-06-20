@@ -55,7 +55,7 @@ class RepositoryDriller:
                 commit,
                 file,
                 self.repository_name,
-                index_diff=self.config.get("index_file_diff", False),
+                index_diff=self.config.index_file_diff,
             )
 
     def drill_commits(

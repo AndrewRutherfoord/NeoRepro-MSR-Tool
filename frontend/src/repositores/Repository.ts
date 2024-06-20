@@ -2,6 +2,11 @@ import axios, { type AxiosInstance, type AxiosResponse } from 'axios'
 
 // These are the base classes for the repository pattern used for retrieving data from the backend.
 
+export interface PaginatedResults<T> {
+  total: number
+  items: T[]
+}
+
 /**
  * Base class for all repositories.
  * Initializes the axios instance with the base URL for the backend.
@@ -18,6 +23,13 @@ export interface ListRepository<ListType> {
    * Retrieves all items from the backend.
    */
   getAll(): Promise<AxiosResponse<ListType[]>>
+}
+
+export interface PaginatedListRepository<ListType> {
+  /**
+   * Retrieves all items from the backend.
+   */
+  getAll(): Promise<AxiosResponse<PaginatedResults<ListType[]>>>
 }
 
 export interface ItemRepository<ItemType> {
