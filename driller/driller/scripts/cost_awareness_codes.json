@@ -1,0 +1,58 @@
+[
+  {
+    "name": "alert",
+    "description": "denotes messages expressing concerns related to billing alarms enforcing an upper threshold on costs."
+  },
+  {
+    "name": "area",
+    "description": "denotes messages expressing concerns related to server or instance geographical location."
+  },
+  {
+    "name": "awareness",
+    "description": "denotes messages simply mentioning concerns with cost (without necessarily implying action)."
+  },
+  {
+    "name": "billing_mode",
+    "description": "denotes messages expressing concerns related to the type of billing plan being used (e.g., on-demand for development or normal plan for production)."
+  },
+  {
+    "name": "cluster",
+    "description": "denotes messages expressing concerns related to cluster configuration."
+  },
+  {
+    "name": "domain",
+    "description": "denotes messages expressing concerns related to domain name system and IP addresses."
+  },
+  {
+    "name": "feature",
+    "description": "denotes messages expressing concerns related to various features such as logging, load balancers or usage of third party libraries."
+  },
+  {
+    "name": "increase",
+    "description": "denotes messages expressing concerns related to increase in cost due to a change."
+  },
+  {
+    "name": "instance",
+    "description": "denotes messages expressing concerns related to computational instances (e.g., Amazon AWS t2.micro) used in the deployment."
+  },
+  {
+    "name": "networking",
+    "description": "denotes messages expressing concerns related to networking configuration."
+  },
+  {
+    "name": "policy",
+    "description": "denotes messages expressing concerns related to the implementation of general rules to prevent excessive charges."
+  },
+  {
+    "name": "provider",
+    "description": "denotes messages expressing concerns related to choosing a service providers (e.g., Amazon, Azure, Google)"
+  },
+  {
+    "name": "saving",
+    "description": "denotes mentioned changes made to save costs."
+  },
+  {
+    "name": "storage",
+    "description": "denotes messages expressing concerns related to storage solutions (e.g., Amazon gp2) used in the deployment."
+  }
+]

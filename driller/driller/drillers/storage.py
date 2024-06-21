@@ -3,7 +3,7 @@ import hashlib
 import logging
 
 from neo4j import GraphDatabase
-from neo4j.exceptions import TransientError
+from neo4j.exceptions import TransientError, ClientError
 from pydriller import Commit
 from pydriller.domain.commit import ModifiedFile
 
@@ -35,7 +35,7 @@ class RepositoryDataStorage(ABC):
         pass
 
 
-class RepositoryNeo4jStorage(RepositoryDataStorage):
+class Neo4jStorage:
 
     def __init__(
         self,
@@ -50,8 +50,6 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         self.batch_size = batch_size
         self.batch = []
 
-        self._create_indexes_and_constraints()
-
     def close(self):
         """
         Closes the Neo4j connection.
@@ -59,22 +57,6 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         """
         self._process_batch()
         self.driver.close()
-
-    def _create_indexes_and_constraints(self):
-        """Creates the uniqueness constraints for the repository database."""
-        with self.driver.session() as session:
-            session.run(
-                "CREATE CONSTRAINT IF NOT EXISTS FOR (r:Repository) REQUIRE r.name IS UNIQUE"
-            )
-            session.run(
-                "CREATE CONSTRAINT IF NOT EXISTS FOR (b:Branch) REQUIRE b.hash IS UNIQUE"
-            )
-            session.run(
-                "CREATE CONSTRAINT IF NOT EXISTS FOR (d:Developer) REQUIRE d.email IS UNIQUE"
-            )
-            session.run(
-                "CREATE CONSTRAINT IF NOT EXISTS FOR (c:Commit) REQUIRE c.hash IS UNIQUE"
-            )
 
     def _add_to_batch(self, query, parameters):
         """Adds a query to the batch of queries.
@@ -87,6 +69,14 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
         if len(self.batch) >= self.batch_size:
             self._process_batch()
 
+    def _run_query(self, query, params):
+        try:
+            with self.driver.session() as session:
+                session.run(query, params)
+        except ClientError as e:
+            logger.error(f"Query failed '{query}' with args ({params}) ")
+        
+            
     def _process_batch(self):
         """Runs a batch of cypher commands on the Neo4j DB."""
         try_again = 3
@@ -105,7 +95,37 @@ class RepositoryNeo4jStorage(RepositoryDataStorage):
                 try_again -= 1
                 if try_again == 0:
                     raise e
-            
+
+
+class RepositoryNeo4jStorage(Neo4jStorage, RepositoryDataStorage):
+
+    def __init__(
+        self,
+        user: str = "neo4j",
+        password: str = "",
+        host: str = "neo4j",
+        port: int = 7687,
+        batch_size: int = 200,
+    ):
+        super().__init__(user, password, host, port, batch_size)
+
+        self._create_indexes_and_constraints()
+
+    def _create_indexes_and_constraints(self):
+        """Creates the uniqueness constraints for the repository database."""
+        with self.driver.session() as session:
+            session.run(
+                "CREATE CONSTRAINT IF NOT EXISTS FOR (r:Repository) REQUIRE r.name IS UNIQUE"
+            )
+            session.run(
+                "CREATE CONSTRAINT IF NOT EXISTS FOR (b:Branch) REQUIRE b.hash IS UNIQUE"
+            )
+            session.run(
+                "CREATE CONSTRAINT IF NOT EXISTS FOR (d:Developer) REQUIRE d.email IS UNIQUE"
+            )
+            session.run(
+                "CREATE CONSTRAINT IF NOT EXISTS FOR (c:Commit) REQUIRE c.hash IS UNIQUE"
+            )
 
     def store_repository(self, repo_name):
         self._add_to_batch("MERGE (r:Repository {name: $name})", {"name": repo_name})
