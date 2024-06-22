@@ -114,3 +114,25 @@ RETURN file, batches, source, format, nodes, relationships, properties, time, ro
 ```
 CALL apoc.import.cypher.all("all.cypher")
 ```
+
+## Use cases:
+
+- I'm here to access the data
+- I'm here to replicate the study
+- I'm here to create a replication package
+
+## Outline
+
+- Intro
+- Related Works
+  - Say here why not using GraphRepo
+- Case Study - Looking at cost awareness
+  - REquirements go here.
+- Design (& IMplementation)
+- Evaluation
+  - Show that fulfilled requirements
+
+- Discussion (explain limitations)
+  - Lessons learned 
+- COnclusions
+  - THis is how we answered the RQs
