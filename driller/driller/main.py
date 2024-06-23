@@ -5,11 +5,12 @@ import logging
 import signal
 import sys
 
-from driller.drillers.storage import RepositoryNeo4jStorage
-from driller.settings.default import LOG_FORMAT, LOG_LEVEL, CONFIGS
 from driller.util import get_class
 
 from driller.settings.default import (
+    LOG_FORMAT,
+    LOG_LEVEL,
+    CONFIGS,
     RABBITMQ_HOST,
     RABBITMQ_PORT,
     RABBITMQ_USER,
@@ -25,6 +26,7 @@ from driller.workers.queue_worker import QueueWorker, Worker
 
 logger = logging.getLogger(__name__)
 logging.getLogger("pydriller").setLevel(logging.WARNING)
+
 worker: Worker | None = None
 
 
@@ -44,6 +46,7 @@ async def main():
     # Catch the docker container stop to speed up shutdown
     signal.signal(signal.SIGTERM, signal_handler)
 
+    # Retrive the classes that will be used from the settings configuration.
     storage_class = get_class(CONFIGS.get("REPOSITORY_STORAGE_CLASS"))
     driller_class = get_class(CONFIGS.get("REPOSITORY_DRILLER_CLASS"))
     worker_class = get_class(CONFIGS.get("WORKER_CLASS"))

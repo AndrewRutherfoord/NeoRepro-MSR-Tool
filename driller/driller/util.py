@@ -9,21 +9,14 @@ logger = logging.getLogger(__name__)
 
 
 def get_class(class_path):
+    """Get's class based on string that points to it.
+    Used for changing classes that are used easily in settings file.
+    """
 
-    # Split the path to get the module and class name
     module_path, class_name = class_path.rsplit(".", 1)
-
-    # Import the module
     module = importlib.import_module(module_path)
 
-    # Get the class
     return getattr(module, class_name)
-
-
-def remove_none_values(d):
-    if not isinstance(d, dict):
-        return d
-    return {k: remove_none_values(v) for k, v in d.items() if v is not None}
 
 
 def load_yaml(path):
@@ -33,7 +26,7 @@ def load_yaml(path):
 
 
 def handle_date(
-    data: dict, date_key: str, boundary: datetime = None
+    data: dict, date_key: str, boundary: datetime | None = None
 ) -> datetime | None:
     """Handles the date that is passed in from the configuration file.
     If the given date key provided, then set it to boundary. Suggests user wants all commits to be mined.
@@ -86,4 +79,3 @@ def handle_date(
 #         projects.append(ProjectConfig(**repo))
 #
 #     return neo, defaults, projects
-
