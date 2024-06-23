@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from abc import ABC, abstractmethod
 
@@ -8,11 +7,25 @@ import aio_pika
 logger = logging.getLogger(__name__)
 
 
-class QueueWorker(ABC):
+class Worker(ABC):
+    """Abstract definition of a worker class which will wait for jobs and complete them until `close()` is called"""
 
-    def __init__(self, host, port, queue_name, heartbeat_interval=30):
+    async def start(self):
+        """Starts the worker."""
+        pass
+
+    def close(self):
+        """Stops worker waiting for jobs"""
+        pass
+
+
+class QueueWorker(Worker):
+
+    def __init__(self, host, port, user, password, queue_name, heartbeat_interval=30):
         self.host = host
         self.port = port
+        self.user = user
+        self.password = password
         self.queue_name = queue_name
 
         self.connection = None
@@ -22,10 +35,11 @@ class QueueWorker(ABC):
         self.heartbeat_task = None
 
     async def connect(self):
+
         try:
             # Perform connection
             self.connection = await aio_pika.connect(
-                f"amqp://guest:guest@{self.host}:{self.port}/"
+                f"amqp://{self.password}:{self.user}@{self.host}:{self.port}/"
             )
 
             # Creating a channel
@@ -110,11 +124,11 @@ class QueueWorker(ABC):
 
     async def handle_request(self, body, message):
         loop = asyncio.get_event_loop()
-        
+
         await self.on_before_start_job(body, message)
-        
+
         response = await loop.run_in_executor(None, self.on_request, body, message)
-        
+
         await self.on_after_finish_job(response, message)
 
         return response

@@ -28,9 +28,15 @@ def clone_repository(repository_url, repository_location):
             logger.error(f"Directory `{repository_location}` already exists but isn't a Git Repo.")
             raise e  # Directory exists but not a Git repo.
         
-
-    Repo.clone_from(repository_url, repository_location)
-
+        except Exception as e:
+            logger.exception
+        
+    try:
+        Repo.clone_from(repository_url, repository_location)
+    except GitCommandError as e:
+        logger.warning("Could not get Git Repository. Probably because it no longer exists.")
+        raise LookupError("Repository not found on remote host.")
+    
 def remove_repository_clone(repository_location):
     try:
         if os.path.exists(repository_location):

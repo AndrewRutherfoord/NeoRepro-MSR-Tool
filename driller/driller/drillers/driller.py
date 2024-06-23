@@ -78,7 +78,7 @@ class RepositoryDriller:
                 counter += 1
                 if self.config.index_file_modifications:
                     self._handle_modified_files(commit, commit.modified_files)
-            if counter % 100 == 0:
+            if counter % 100 == 0 and counter > 0:
                 logger.info(f"Processed {counter} commits")
 
     def commit_filter(self, commit, filter_configs: FiltersConfig = None) -> bool:

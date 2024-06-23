@@ -11,6 +11,10 @@ from datetime import datetime
 
 
 class PydrillerConfig(BaseModel):
+    """Holds the arguments for the Pydriller Repository class instance used in drilling.
+    Documentation for each argument's meaning at https://pydriller.readthedocs.io/en/latest/repository.html.
+    """
+
     since: Optional[datetime] = None
     to: Optional[datetime] = None
     from_commit: Optional[str] = None
@@ -27,7 +31,7 @@ class PydrillerConfig(BaseModel):
 
     @field_validator("since", "to")
     def parse_dates(cls, value):
-        """Parses datetime strings of the format YYYY-MM-DD."""
+        """Parses datetime strings of the format YYYY-MM-DD. Is applied to `since` and `to` variables."""
 
         if isinstance(value, str):
             return datetime.strptime(value, "%Y-%m-%d")
@@ -35,7 +39,7 @@ class PydrillerConfig(BaseModel):
 
     @field_serializer("since", "to")
     def serialize_dt(self, dt: datetime, _info):
-        """Converts the datetime object to a string in the format of YYYY-MM-DD."""
+        """Converts the datetime object to a string in the format of YYYY-MM-DD. Is applied to `since` and `to` variables."""
         if dt is None:
             return None
         return dt.strftime("%Y-%m-%d")
@@ -47,28 +51,28 @@ class PydrillerConfig(BaseModel):
 
 
 class FilterMethod(str, Enum):
-    exact = "exact"
-    not_exact = "!exact"
-    contains = "contains"
-    not_contains = "!contains"
+    exact = "exact"  # Checks if field's value is exactly equal to search value
+    not_exact = "!exact"  # Checks if field's value is not equal to search value
+    contains = "contains"  # Checks if field's value contains the search value
+    not_contains = (
+        "!contains"  # Checks if field's value does not contain the search value
+    )
 
 
 class Filter(BaseModel):
     field: str
-    value: str
+    value: str | list[str]
     method: FilterMethod = FilterMethod.contains
 
     model_config = {"use_enum_values": True}
 
 
 class FiltersConfig(BaseModel):
-    commit: list[Filter] = None
+    commit: list[Filter] = []
 
     def apply_defaults(self, defaults):
-        if self.commit is None:
+        if len(self.commit) < 1:
             self.commit = defaults.commit
-        else:
-            self.commit.apply_defaults(defaults.commit)
 
 
 class DefaultsConfig(BaseModel):
@@ -94,7 +98,7 @@ class RepositoryConfig(DefaultsConfig):
         Args:
             defaults (DefaultsConfig): The defaults to apply.
         """
-        if self.delete_clone is None:
+        if self.delete_clone is None and defaults.delete_clone is not None:
             self.delete_clone = defaults.delete_clone
         if self.index_file_modifications is None:
             self.index_file_modifications = defaults.index_file_modifications

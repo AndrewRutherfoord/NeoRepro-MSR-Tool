@@ -73,12 +73,14 @@ class Neo4jStorage:
         try:
             with self.driver.session() as session:
                 session.run(query, params)
-        except ClientError as e:
+        except ClientError:
             logger.error(f"Query failed '{query}' with args ({params}) ")
-        
-            
+
     def _process_batch(self):
-        """Runs a batch of cypher commands on the Neo4j DB."""
+        """Runs a batch of cypher commands as a transaciton on the Neo4j DB.
+        In testing with multiple workers it would occasianlly enounter a `TransientError` causes by a deadlock on Neo4j.
+        If Deadlock enountered it will try to re-run the transaction. If fails 3 times, throws the error.
+        """
         try_again = 3
         while try_again > 0:
             logger.debug("Processing Batch")
@@ -95,9 +97,15 @@ class Neo4jStorage:
                 try_again -= 1
                 if try_again == 0:
                     raise e
+            except Exception as e:
+                logger.exception(e)
+                raise e
 
 
 class RepositoryNeo4jStorage(Neo4jStorage, RepositoryDataStorage):
+    """
+    Neo4j storage implemetation that stores data for a PyDriller repository.
+    """
 
     def __init__(
         self,
@@ -128,14 +136,28 @@ class RepositoryNeo4jStorage(Neo4jStorage, RepositoryDataStorage):
             )
 
     def store_repository(self, repo_name):
+        """Creates a `Repository` node
+
+        Args:
+            repo_name: Name of the repository to store.
+        """
         self._add_to_batch("MERGE (r:Repository {name: $name})", {"name": repo_name})
 
     def hash_branch(self, branch_name, repository_name):
+        """Hashes the branch name and repository name together to produce a unique identifier for the branch."""
+
         return hashlib.sha224(
             str(f"{branch_name}:{repository_name}").encode("utf-8")
         ).hexdigest()
 
     def store_branch(self, repo_name, branch_name):
+        """Store a `Branch` node.
+
+        Args:
+            repo_name: Name of repository which branch belongs to.
+            branch_name: Name of branhc
+        """
+
         self._add_to_batch(
             "MATCH (r:Repository {name: $repo_name}) "
             "MERGE (b:Branch {hash: $branch_hash })-[:PART_OF]->(r)"
@@ -159,7 +181,7 @@ class RepositoryNeo4jStorage(Neo4jStorage, RepositoryDataStorage):
         )
 
     def store_commit(self, repo_name, commit: Commit):
-        """Stores an instance of a commit and links it to the author."""
+        """Stores an instance of a commit and links it to the author and it's parent commit."""
 
         # Create or Update commit and link it to the developer as an `AUTHOR` relationship.
         self._add_to_batch(
@@ -207,7 +229,7 @@ class RepositoryNeo4jStorage(Neo4jStorage, RepositoryDataStorage):
             )
 
     def store_modified_file(
-        self, commit: Commit, file: ModifiedFile, repository_name: str, index_diff=True
+        self, commit: Commit, file: ModifiedFile, repository_name: str, index_diff=False
     ):
         """Stores a file modification and links it to the commit.
         If the file change is a RENAME, creates a `RENAMED_TO` relation from the old file node.
@@ -216,7 +238,7 @@ class RepositoryNeo4jStorage(Neo4jStorage, RepositoryDataStorage):
             commit: Pydriller Commit which the file was modified in.
             file: PyDriller ModifiedFile instance to store.
             repository_name: Used in filename hash.
-            index_diff: Whether to index the file git diff.
+            index_diff: Whether to index the file git diff. Increases drilling time.
         """
 
         logger.debug(f"Storing file {file.filename} in commit {commit.hash}")

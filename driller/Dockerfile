@@ -5,8 +5,8 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV POETRY_VERSION=1.8.3
 
-RUN pip install --upgrade pip
-RUN pip install poetry==$POETRY_VERSION
+RUN pip install --upgrade pip --no-cache-dir && \
+    pip install poetry==$POETRY_VERSION
 
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
@@ -20,7 +20,7 @@ RUN git config --global --add safe.directory '*'
 COPY ./driller/poetry.lock ./driller/pyproject.toml ./
 COPY ./common/ ../common/
 
-RUN poetry install && rm -rf $POETRY_CACHE_DIR
+RUN poetry install --with test && rm -rf $POETRY_CACHE_DIR
 
 COPY ./driller/driller ./driller
 COPY ./driller/tests ./tests
