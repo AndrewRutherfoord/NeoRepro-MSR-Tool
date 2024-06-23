@@ -59,7 +59,7 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
             LookupError: When repository can't be cloned
             Exception:
         """
-
+        storage = None
         try:
             repository: RepositoryConfig = drill_config.repository
             if drill_config.defaults:
@@ -94,7 +94,8 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
             raise e
         except Exception as e:
             logger.exception(e)
-            storage.close()
+            if storage is not None:
+                storage.close()
             raise e
 
     def parse_message(self, message: str) -> SingleDrillConfig:

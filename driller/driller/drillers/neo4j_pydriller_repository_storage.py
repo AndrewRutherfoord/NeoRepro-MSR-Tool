@@ -1,105 +1,13 @@
-from abc import ABC, abstractmethod
 import hashlib
 import logging
 
-from neo4j import GraphDatabase
-from neo4j.exceptions import TransientError, ClientError
 from pydriller import Commit
-from pydriller.domain.commit import ModifiedFile
+from pydriller.domain.commit import Developer, ModifiedFile
 
-URI = "neo4j://localhost:7687"
-AUTH = ("neo4j", "neo4j123")
+from driller.drillers.neo4j_storage import Neo4jStorage
+from driller.drillers.pydriller_repository_storage import RepositoryDataStorage
 
 logger = logging.getLogger(__name__)
-
-
-class RepositoryDataStorage(ABC):
-    @abstractmethod
-    def store_repository(self, repo_name):
-        pass
-
-    @abstractmethod
-    def store_branch(self, repo_name, branch_name):
-        pass
-
-    @abstractmethod
-    def store_commit(self, repo_name, commit: Commit):
-        pass
-
-    @abstractmethod
-    def store_developer(self, developer):
-        pass
-
-    @abstractmethod
-    def store_modified_file(self, commit, file, repository_name):
-        pass
-
-
-class Neo4jStorage:
-
-    def __init__(
-        self,
-        user: str = "neo4j",
-        password: str = "",
-        host: str = "neo4j",
-        port: int = 7687,
-        batch_size: int = 200,
-    ):
-        uri = f"bolt://{host}:{port}"
-        self.driver = GraphDatabase.driver(uri, auth=(user, password))
-        self.batch_size = batch_size
-        self.batch = []
-
-    def close(self):
-        """
-        Closes the Neo4j connection.
-        Processes remaining batch just before close.
-        """
-        self._process_batch()
-        self.driver.close()
-
-    def _add_to_batch(self, query, parameters):
-        """Adds a query to the batch of queries.
-
-        Args:
-            query (str): query string
-            parameters (dict): the parameters that will be inserted into the queries.
-        """
-        self.batch.append((query, parameters))
-        if len(self.batch) >= self.batch_size:
-            self._process_batch()
-
-    def _run_query(self, query, params):
-        try:
-            with self.driver.session() as session:
-                session.run(query, params)
-        except ClientError:
-            logger.error(f"Query failed '{query}' with args ({params}) ")
-
-    def _process_batch(self):
-        """Runs a batch of cypher commands as a transaciton on the Neo4j DB.
-        In testing with multiple workers it would occasianlly enounter a `TransientError` causes by a deadlock on Neo4j.
-        If Deadlock enountered it will try to re-run the transaction. If fails 3 times, throws the error.
-        """
-        try_again = 3
-        while try_again > 0:
-            logger.debug("Processing Batch")
-            try:
-                if self.batch:
-                    with self.driver.session() as session:
-                        with session.begin_transaction() as tx:
-                            for operation in self.batch:
-                                tx.run(*operation)
-                    self.batch = []
-                return
-            except TransientError as e:
-                logger.exception("Encountered a TransientError", e)
-                try_again -= 1
-                if try_again == 0:
-                    raise e
-            except Exception as e:
-                logger.exception(e)
-                raise e
 
 
 class RepositoryNeo4jStorage(Neo4jStorage, RepositoryDataStorage):
@@ -169,7 +77,7 @@ class RepositoryNeo4jStorage(Neo4jStorage, RepositoryDataStorage):
             },
         )
 
-    def store_developer(self, developer):
+    def store_developer(self, developer: Developer):
         """Store the information for a developer."""
 
         self._add_to_batch(
@@ -296,33 +204,3 @@ class RepositoryNeo4jStorage(Neo4jStorage, RepositoryDataStorage):
                 "MERGE (old)-[:RENAMED_TO]->(new)",
                 {"old_hash": old_file_hash, "new_hash": new_file_hash},
             )
-
-
-class LogRepositoryStorage(RepositoryDataStorage):
-    """Storage class for logging the data to the console.
-    Just for testing purposes.
-    """
-
-    def __init__(self):
-        pass
-
-    def store_commit(self, repo_name, commit: Commit):
-        logger.info(
-            {
-                "hash": commit.hash,
-                "message": commit.msg,
-                "author": commit.author.name,
-                "date": commit.author_date.strftime("%Y-%m-%d %H:%M:%S"),
-                "parents": commit.parents,
-                "dmm_unit_size": commit.dmm_unit_size,
-                "dmm_unit_complexity": commit.dmm_unit_complexity,
-                "dmm_unit_interfacing": commit.dmm_unit_interfacing,
-                "merge": commit.merge,
-            }
-        )
-
-    def store_repository(self, repo_name):
-        logger.info(repo_name)
-
-    def store_branch(self, repo_name, branch_name):
-        pass

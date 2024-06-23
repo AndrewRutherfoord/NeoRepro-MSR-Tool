@@ -1,20 +1,31 @@
-from datetime import datetime, timedelta
 import logging
+from datetime import datetime, timedelta
 
-from driller.drillers.driller import (
-    RepositoryDataStorage,
-    RepositoryDriller,
+from common.models.driller_config import (
+    Filter,
+    FilterMethod,
+    FiltersConfig,
+    PydrillerConfig,
+    RepositoryConfig,
 )
-from driller.drillers.storage import LogRepositoryStorage, RepositoryNeo4jStorage
 from pydriller import Commit
+
+from driller.drillers.driller import RepositoryDriller
+from driller.drillers.neo4j_pydriller_repository_storage import RepositoryNeo4jStorage
+from driller.drillers.pydriller_repository_storage import RepositoryDataStorage
+from driller.settings.default import (
+    NEO4J_HOST,
+    NEO4J_PASSWORD,
+    NEO4J_PORT,
+    NEO4J_USER,
+    REPO_CLONE_LOCATION,
+)
 
 logger = logging.getLogger(__name__)
 
 now = datetime.now()
 
 period = datetime(2023, 1, 1)
-
-from driller.settings.default import NEO4J_HOST, NEO4J_PORT, NEO4J_USER, NEO4J_PASSWORD
 
 # class TestConfigDriller(TestCase):
 # def test_commit_drill():
@@ -34,15 +45,21 @@ def test_commit_drill_neo4j_insert():
         password=NEO4J_PASSWORD,
     )
 
-    driller = RepositoryDriller("repos/pydriller", storage)
-
+    repo_config = RepositoryConfig(
+        name="pydriller", url="https://github.com/ishepard/pydriller.git"
+    )
+    driller = RepositoryDriller(
+        f"{REPO_CLONE_LOCATION }/pydriller", storage, repo_config
+    )
+    pydriller_filters = PydrillerConfig(since=period)
     driller.drill_repository()
-    driller.drill_commits(pydriller_filters={"since": period})
+    driller.drill_commits(pydriller_filters=pydriller_filters)
 
     storage.close()
 
 
-class TestStorage(RepositoryDataStorage):
+class RepositoryTestStorage(RepositoryDataStorage):
+
     def store_repository(self, repo_name):
         assert repo_name == "pydriller"
 
@@ -59,74 +76,65 @@ class TestStorage(RepositoryDataStorage):
         pass
 
 
+def setup_test_driller(storage_class):
+    storage = storage_class()
+
+    return RepositoryDriller(
+        f"{REPO_CLONE_LOCATION }/pydriller",
+        storage,
+        RepositoryConfig(
+            name="pydriller", url="https://github.com/ishepard/pydriller.git"
+        ),
+    )
+
+
 def test_commit_exact_filter():
     msg = "Update continuous-integration-workflow.yml"
 
-    class TestCaseStorage(TestStorage):
+    class TestCaseStorage(RepositoryTestStorage):
         def store_commit(self, repo_name, commit: Commit):
             assert commit.msg == msg
             logger.info(commit.msg)
 
-    driller = RepositoryDriller("repos/pydriller", TestCaseStorage())
+    driller = setup_test_driller(TestCaseStorage)
 
     driller.drill_repository()
     driller.drill_commits(
-        pydriller_filters={"since": period},
-        filters=[
-            {
-                "field": "msg",
-                "value": msg,
-                "method": "exact",
-            }
-        ],
+        pydriller_filters=PydrillerConfig(since=period),
+        filters=FiltersConfig(
+            commit=[
+                Filter(
+                    field="msg",
+                    value=msg,
+                    method=FilterMethod.exact,
+                )
+            ]
+        ),
     )
 
 
 def test_commit_contains_filter():
     check_str = "Update"
 
-    class TestCaseStorage(TestStorage):
+    class TestCaseStorage(RepositoryTestStorage):
         def store_commit(self, repo_name, commit: Commit):
             assert check_str in commit.msg
             logger.info(commit.msg)
 
-    driller = RepositoryDriller("repos/pydriller", TestCaseStorage())
+    driller = setup_test_driller(TestCaseStorage)
 
     driller.drill_repository()
     driller.drill_commits(
-        drill_files=False,
-        pydriller_filters={"since": period},
-        filters=[
-            {
-                "field": "msg",
-                "value": check_str,
-                "method": "contains",
-            }
-        ],
-    )
-
-
-def test_commit_contains_filter():
-    check_str = "Update"
-
-    class TestCaseStorage(TestStorage):
-        def store_commit(self, repo_name, commit: Commit):
-            assert check_str in commit.msg
-            logger.info(commit.msg)
-
-    driller = RepositoryDriller("repos/pydriller", TestCaseStorage())
-
-    driller.drill_repository()
-    driller.drill_commits(
-        drill_files=False,
-        pydriller_filters={"since": period},
-        filters=[
-            {
-                "field": "msg",
-                "value": check_str,
-                "method": "contains",
-            }
-        ],
+        pydriller_filters=PydrillerConfig(since=period),
+        filters=FiltersConfig(
+            commit=[
+                Filter(
+                    field="msg",
+                    value=check_str,
+                    method=FilterMethod.contains,
+                )
+            ]
+        ),
     )
 
 
@@ -134,24 +142,25 @@ def test_commit_contains_filter():
 def test_commit_contains_list_filter():
     check_strs = ["Update", "docs"]
 
-    class TestCaseStorage(TestStorage):
+    class TestCaseStorage(RepositoryTestStorage):
         def store_commit(self, repo_name, commit: Commit):
             logger.info(commit.msg)
             assert any(s in commit.msg for s in check_strs)
 
-    driller = RepositoryDriller("repos/pydriller", TestCaseStorage())
+    driller = setup_test_driller(TestCaseStorage)
 
     driller.drill_repository()
     driller.drill_commits(
-        drill_files=False,
-        pydriller_filters={"since": period},
-        filters=[
-            {
-                "field": "msg",
-                "value": check_strs,
-                "method": "contains",
-            }
-        ],
+        pydriller_filters=PydrillerConfig(since=period),
+        filters=FiltersConfig(
+            commit=[
+                Filter(
+                    field="msg",
+                    value=check_strs,
+                    method=FilterMethod.contains,
+                )
+            ],
+        ),
     )
 
 
@@ -159,27 +168,27 @@ def test_commit_contains_list_filter():
 def test_commit_contains_filter_AND():
     check_strs = ["Update", "docs"]
 
-    class TestCaseStorage(TestStorage):
+    class TestCaseStorage(RepositoryTestStorage):
         def store_commit(self, repo_name, commit: Commit):
             logger.info(commit.msg)
             assert all(s in commit.msg for s in check_strs)
 
-    driller = RepositoryDriller("repos/pydriller", TestCaseStorage())
-
+    driller = setup_test_driller(TestCaseStorage)
     driller.drill_repository()
     driller.drill_commits(
-        drill_files=False,
-        pydriller_filters={"since": period},
-        filters=[
-            {
-                "field": "msg",
-                "value": check_strs[0],
-                "method": "contains",
-            },
-            {
-                "field": "msg",
-                "value": check_strs[1],
-                "method": "contains",
-            },
-        ],
+        pydriller_filters=PydrillerConfig(since=period),
+        filters=FiltersConfig(
+            commit=[
+                Filter(
+                    field="msg",
+                    value=check_strs[0],
+                    method=FilterMethod.contains,
+                ),
+                Filter(
+                    field="msg",
+                    value=check_strs[1],
+                    method=FilterMethod.contains,
+                ),
+            ]
+        ),
     )

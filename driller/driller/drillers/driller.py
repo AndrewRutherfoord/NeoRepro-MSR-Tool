@@ -1,20 +1,13 @@
-from datetime import datetime
 import logging
-
 from pydriller import Repository, Commit
-
-from driller.drillers.storage import RepositoryDataStorage
-from driller.settings.default import DATE_FORMAT
-from driller.util import handle_date
 
 from common.models.driller_config import (
     RepositoryConfig,
     PydrillerConfig,
     FiltersConfig,
 )
-
-URI = "neo4j://localhost:7687"
-AUTH = ("neo4j", "neo4j123")
+from driller.drillers.neo4j_pydriller_repository_storage import RepositoryNeo4jStorage
+from driller.drillers.pydriller_repository_storage import RepositoryDataStorage
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +26,7 @@ class RepositoryDriller:
         self.storage: RepositoryDataStorage = storage
         self.config: RepositoryConfig = config
 
-    def get_commits(self, pydriller_filters: PydrillerConfig = None):
+    def get_commits(self, pydriller_filters: PydrillerConfig | None = None):
         kwargs = {}
         if pydriller_filters is not None:
             kwargs = pydriller_filters.model_dump(exclude_none=True, exclude_unset=True)
@@ -59,7 +52,9 @@ class RepositoryDriller:
             )
 
     def drill_commits(
-        self, filters: FiltersConfig = None, pydriller_filters: PydrillerConfig = None
+        self,
+        filters: FiltersConfig | None = None,
+        pydriller_filters: PydrillerConfig | None = None,
     ):
         """Drills all the commits based on the filters and pydriller configs.
         Inserts all the data into the storage.
@@ -81,7 +76,9 @@ class RepositoryDriller:
             if counter % 100 == 0 and counter > 0:
                 logger.info(f"Processed {counter} commits")
 
-    def commit_filter(self, commit, filter_configs: FiltersConfig = None) -> bool:
+    def commit_filter(
+        self, commit, filter_configs: FiltersConfig | None = None
+    ) -> bool:
         """Used to determine whether a commit should be inserted into the database
 
         Args:

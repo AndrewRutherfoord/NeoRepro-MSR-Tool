@@ -134,16 +134,18 @@ class QueueWorker(Worker):
         return response
 
     async def send_heartbeat(self):
-        while True:
-            try:
+        try:
+            while self.connection is not None:
                 await self.connection.ready()
                 logger.debug("Heartbeat sent")
-            except Exception as e:
-                logger.exception("Heartbeat failed: %s", e)
+
             await asyncio.sleep(self.heartbeat_interval)
 
+        except Exception as e:
+            logger.exception("Heartbeat failed: %s", e)
+
     async def heartbeat(self):
-        while True:
+        while self.channel is not None:
             await asyncio.sleep(self.heartbeat_interval)
             await self.channel.heartbeat_tick()
 

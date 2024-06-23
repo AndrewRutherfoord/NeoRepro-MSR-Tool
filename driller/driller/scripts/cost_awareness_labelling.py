@@ -1,9 +1,8 @@
 import json
-import os
 from typing import Optional
 
 from pydantic import BaseModel
-from driller.drillers.storage import Neo4jStorage
+from driller.drillers.neo4j_storage import Neo4jStorage
 
 
 class LabelledCommit(BaseModel):
@@ -82,18 +81,18 @@ class LabellingStorage(Neo4jStorage):
     def execute(self):
         self.load_dataset()
         self.load_codes()
-        
+
         print("Dataset & Codes Loaded.")
 
         self.filter_remove_issues()
         self.add_commit_hashes()
-        
+
         print("Setup Complete. Adding to DB.")
-        
+
         self.store_codes()
 
         print("Codes stored.")
-        
+
         self.store_code_commit_relationships()
 
         print("Complete.")

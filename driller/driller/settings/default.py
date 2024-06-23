@@ -17,7 +17,7 @@ NEO4J_PORT = os.environ.get("NEO4J_PORT", None)
 
 NEO4J_DEFAULT_BATCH_SIZE = None
 try:
-    NEO4J_DEFAULT_BATCH_SIZE = int(os.environ.get("NEO4J_DEFAULT_BATCH_SIZE"))
+    NEO4J_DEFAULT_BATCH_SIZE = int(os.environ.get("NEO4J_DEFAULT_BATCH_SIZE", 50))
 except ValueError:
     raise ValueError("NEO4J_DEFAULT_BATCH_SIZE must be an integer.")
 
@@ -27,7 +27,7 @@ LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 REPO_CLONE_LOCATION = os.environ.get("REPO_CLONE_LOCATION", "/tmp/repos")
 
 DEFAULT_CONFIGS = {
-    "REPOSITORY_STORAGE_CLASS": "driller.drillers.storage.RepositoryNeo4jStorage",
+    "REPOSITORY_STORAGE_CLASS": "driller.drillers.neo4j_pydriller_repository_storage.RepositoryNeo4jStorage",
     "REPOSITORY_DRILLER_CLASS": "driller.drillers.driller.RepositoryDriller",
     "WORKER_CLASS": "driller.workers.queue_driller_worker.QueueRepositoryNeo4jDrillerWorker",
 }
