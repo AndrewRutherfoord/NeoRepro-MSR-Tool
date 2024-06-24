@@ -14,7 +14,7 @@ class Worker(ABC):
         """Starts the worker."""
         pass
 
-    def close(self):
+    async def close(self):
         """Stops worker waiting for jobs"""
         pass
 
@@ -54,8 +54,8 @@ class QueueWorker(Worker):
                 self.queue_name,
             )
             logger.info("Connected to amqp...")
-        except:
-            logger.exception("Could not connect to message queue.")
+        except Exception as e:
+            logger.exception("Could not connect to message queue.", e)
 
     @abstractmethod
     def on_request(
@@ -76,6 +76,8 @@ class QueueWorker(Worker):
     async def send_response(
         self, message: aio_pika.abc.AbstractIncomingMessage, response: str
     ):
+        if message.reply_to is None:
+            raise ValueError("Message must contain a `reply_to` field.")
         logger.info(f"Sending response: {response}")
         await self.exchange.publish(
             aio_pika.Message(
@@ -93,6 +95,8 @@ class QueueWorker(Worker):
     async def on_after_finish_job(
         self, job_response: str, message: aio_pika.abc.AbstractIncomingMessage
     ):
+        if message.reply_to is None:
+            raise ValueError("Message must contain a `reply_to` field.")
         logger.debug("Request complete")
 
         await self.exchange.publish(
@@ -109,18 +113,22 @@ class QueueWorker(Worker):
         logger.exception("Job failed: %s", exception)
 
     async def consume_jobs(self):
-        async with self.queue.iterator() as qiterator:
-            message: aio_pika.abc.AbstractIncomingMessage
-            async for message in qiterator:
-                try:
-                    async with message.process(requeue=False):
-                        assert message.reply_to is not None
+        try:
+            async with self.queue.iterator() as qiterator:
+                message: aio_pika.abc.AbstractIncomingMessage
+                async for message in qiterator:
+                    try:
+                        async with message.process(requeue=False):
+                            assert message.reply_to is not None
 
-                        body = message.body.decode()
+                            body = message.body.decode()
 
-                        await self.handle_request(body, message)
-                except Exception as e:
-                    await self.on_job_failed(e, message)
+                            await self.handle_request(body, message)
+                    except Exception as e:
+                        await self.on_job_failed(e, message)
+        except aio_pika.exceptions.ChannelInvalidStateError:
+            # Thrown on graceful exit.
+            return
 
     async def handle_request(self, body, message):
         loop = asyncio.get_event_loop()
@@ -145,19 +153,20 @@ class QueueWorker(Worker):
             logger.exception("Heartbeat failed: %s", e)
 
     async def heartbeat(self):
+        await asyncio.sleep(self.heartbeat_interval)
         while self.channel is not None:
-            await asyncio.sleep(self.heartbeat_interval)
             await self.channel.heartbeat_tick()
+            await asyncio.sleep(self.heartbeat_interval)
 
     async def start(self):
         await self.connect()
         self.heartbeat_task = asyncio.create_task(self.heartbeat())
         await self.consume_jobs()
 
-    def close(self):
+    async def close(self):
         if self.heartbeat_task:
             self.heartbeat_task.cancel()
         if self.channel:
-            asyncio.run(self.channel.close())
+            await self.channel.close()
         if self.connection:
-            asyncio.run(self.connection.close())
+            await self.connection.close()

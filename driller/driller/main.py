@@ -11,11 +11,13 @@ from driller.settings.default import (
     LOG_FORMAT,
     LOG_LEVEL,
     CONFIGS,
+    RABBITMQ_LOG_LEVEL,
     RABBITMQ_HOST,
     RABBITMQ_PORT,
     RABBITMQ_USER,
     RABBITMQ_PASSWORD,
     RABBITMQ_QUEUE,
+    NEO4J_LOG_LEVEL,
     NEO4J_HOST,
     NEO4J_PORT,
     NEO4J_USER,
@@ -25,28 +27,26 @@ from driller.settings.default import (
 from driller.workers.queue_worker import QueueWorker, Worker
 
 logger = logging.getLogger(__name__)
-logging.getLogger("pydriller").setLevel(logging.WARNING)
+logging.basicConfig(format=LOG_FORMAT, level=LOG_LEVEL)
+std_out_handler = logging.StreamHandler(sys.stdout)
+
+pika_logger = logging.getLogger("pika")
+pika_logger.setLevel(RABBITMQ_LOG_LEVEL)
+pika_logger.addHandler(std_out_handler)
+
+neo4j_logger = logging.getLogger("neo4j")
+neo4j_logger.setLevel(NEO4J_LOG_LEVEL)
+neo4j_logger.addHandler(std_out_handler)
+
+"""
+This is the main file of the driller worker. 
+It creates in instance of the driller worker that is set in the settings file and the waits for queue to have drill jobs to complete.
+"""
 
 worker: Worker | None = None
 
 
-def exit_signal_handler(*_):
-    if worker is not None:
-        worker.close()
-    sys.exit(0)
-
-
 async def main():
-    logging.basicConfig(format=LOG_FORMAT, level=LOG_LEVEL)
-
-    pika_logger = logging.getLogger("pika")
-    pika_logger.setLevel(logging.WARNING)
-
-    signal.signal(signal.SIGINT, signal_handler)
-    # Catch the docker container stop to speed up shutdown
-    signal.signal(signal.SIGTERM, signal_handler)
-
-    # Retrive the classes that will be used from the settings configuration.
     storage_class = get_class(CONFIGS.get("REPOSITORY_STORAGE_CLASS"))
     driller_class = get_class(CONFIGS.get("REPOSITORY_DRILLER_CLASS"))
     worker_class = get_class(CONFIGS.get("WORKER_CLASS"))
@@ -67,6 +67,18 @@ async def main():
             "batch_size": NEO4J_DEFAULT_BATCH_SIZE,
         },
     )
+    loop = asyncio.get_running_loop()
+
+    # Signal handler to gracefully shut down the worker
+    def signal_handler():
+        logger.info("Received termination signal, shutting down gracefully...")
+        if worker is not None:
+            asyncio.create_task(worker.close())
+        for task in asyncio.all_tasks(loop):
+            task.cancel()
+
+    loop.add_signal_handler(signal.SIGTERM, signal_handler)
+    loop.add_signal_handler(signal.SIGINT, signal_handler)
 
     await worker.start()
 
@@ -76,4 +88,4 @@ def exec():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    exec()

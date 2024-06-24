@@ -4,7 +4,7 @@ import logging
 import aio_pika
 from pydantic import ValidationError
 
-from driller.cloner import clone_repository
+from driller.cloner import clone_repository, remove_repository_clone
 
 from driller.drillers.driller import RepositoryDriller
 
@@ -61,19 +61,22 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
         """
         storage = None
         try:
+            # Apply defaults to the repository config
             repository: RepositoryConfig = drill_config.repository
             if drill_config.defaults:
                 repository.apply_defaults(drill_config.defaults)
 
+            # Set path to clone or find repo based on location where repo clones are stored in container.
             repo_path = f"{self.clone_location}{repository.name}"
 
+            # Clone Repository if url exists. Throws `LookupError` if problem cloning repo.
             if repository.url is not None:
                 clone_repository(
                     repository_url=repository.url, repository_location=repo_path
                 )
                 logger.debug(f"Cloned Repository {repository.name} to `{repo_path}`")
 
-            # Instantiate the storage class where the drilled data will be written
+            # Instantiate the storage class where the drilled data will be written to.
             storage = self.storage_class(**self.storage_args)
 
             # Instantiate the driller class. Drills the repository and writes the data to the storage class.
@@ -84,12 +87,19 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
                 **self.driller_args,
             )
 
+            # Preform the drill job.
             driller.drill_repository()
             driller.drill_commits(
                 filters=repository.filters,
                 pydriller_filters=repository.pydriller,
             )
+
+            # Cleanup
             storage.close()
+
+            if repository.delete_clone:
+                remove_repository_clone(repo_path)
+
         except LookupError as e:
             raise e
         except Exception as e:
@@ -99,7 +109,7 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
             raise e
 
     def parse_message(self, message: str) -> SingleDrillConfig:
-        """Parses the incoming message string to a pydantic model.
+        """Parses the incoming message string to a SingleDrillerConfig model.
 
         Args:
             message (str): The string to be parsed.
@@ -123,6 +133,9 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
             job_body (str): Job COnfig to be parsed by `parse_message`
             message (aio_pika.abc.AbstractIncomingMessage): Pika Message to be used to send response to creator of message.
         """
+        if message.reply_to is None:
+            raise ValueError("Message must contain a `reply_to` field.")
+
         drill_config = self.parse_message(job_body)
 
         await self.exchange.publish(
@@ -174,6 +187,8 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
         """
 
         job_id = None
+        drill_config: SingleDrillConfig | None = None
+        response = {}
         try:
             drill_config = self.parse_message(body)
             job_id = drill_config.job_id
@@ -185,7 +200,7 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
             response = self.create_response(job_id, "Drilling complete.", "complete")
             logger.info(f"Drill Job Complete: {drill_config.repository.name}")
 
-        except LookupError as e:
+        except LookupError:
             response = self.create_error_response(
                 job_id, "Repository not found on remote host."
             )
@@ -193,7 +208,9 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
             response = self.create_error_response(job_id, "Drill config invalid.")
         except Exception as e:
             logger.exception(e)
-            logger.error(f"Drill Job Failed: {drill_config.repository.name}")
+            if drill_config is None:
+                logger.error(f"Drill Job Failed: {body}")
+            else:
+                logger.error(f"Drill Job Failed: {drill_config.repository.name}")
             response = self.create_error_response(job_id, f"Drilling failed: {str(e)}")
-        finally:
-            return json.dumps(response)
+        return json.dumps(response)
