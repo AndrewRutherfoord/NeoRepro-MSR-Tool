@@ -30,7 +30,7 @@ logging.getLogger("pydriller").setLevel(logging.WARNING)
 worker: Worker | None = None
 
 
-def signal_handler(*_):
+def exit_signal_handler(*_):
     if worker is not None:
         worker.close()
     sys.exit(0)

@@ -6,14 +6,17 @@ from common.models.driller_config import (
     PydrillerConfig,
     FiltersConfig,
 )
-from driller.drillers.neo4j_pydriller_repository_storage import RepositoryNeo4jStorage
+from pydriller.domain.commit import ModifiedFile
 from driller.drillers.pydriller_repository_storage import RepositoryDataStorage
 
 logger = logging.getLogger(__name__)
 
 
 class RepositoryDriller:
-    """A GraphRepo Driller that takes configs from config objects."""
+    """Drills a repository with PyDriller and inserts the data into the given repository storage.
+    Uses dependency injection to separate storage of repository data from the storage of the data.
+    This could theoretically make it possible to implement a storage for a relational database or some other storage system.
+    """
 
     def __init__(
         self,
@@ -27,6 +30,8 @@ class RepositoryDriller:
         self.config: RepositoryConfig = config
 
     def get_commits(self, pydriller_filters: PydrillerConfig | None = None):
+        """Gets the commit iterator from Pydriller with the provided pydriller configurations"""
+
         kwargs = {}
         if pydriller_filters is not None:
             kwargs = pydriller_filters.model_dump(exclude_none=True, exclude_unset=True)
@@ -35,14 +40,18 @@ class RepositoryDriller:
 
         return Repository(self.repository_path, **kwargs).traverse_commits()
 
-    def _handle_branches(self, branch_names):
+    def _handle_branches(self, branch_names: list[str]):
+        """Stores a list of branch names."""
         for b in branch_names:
             self.storage.store_branch(self.repository_name, b)
 
     def _handle_committer(self, committer):
         self.storage.store_developer(committer)
 
-    def _handle_modified_files(self, commit: Commit, files):
+    def _handle_modified_files(self, commit: Commit, files: list[ModifiedFile]):
+        """Iterates over the modified files of a commit and passes them to the storage."""
+        if self.config.index_file_diff is None:
+            self.config.index_file_diff = False
         for file in files:
             self.storage.store_modified_file(
                 commit,
@@ -66,7 +75,7 @@ class RepositoryDriller:
         counter = 0
         for commit in self.get_commits(pydriller_filters):
             if self.commit_filter(commit, filters):
-                self._handle_branches(commit.branches)
+                self._handle_branches(list(commit.branches))
                 self._handle_committer(commit.author)
 
                 self.storage.store_commit(self.repository_name, commit)

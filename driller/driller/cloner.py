@@ -27,7 +27,7 @@ def clone_repository(repository_url, repository_location):
                 return  # Another repo at location
         Repo.clone_from(repository_url, repository_location)
 
-    except GitCommandError as e:
+    except GitCommandError:
         logger.error(
             "Could not get Git Repository. Probably because it no longer exists."
         )
