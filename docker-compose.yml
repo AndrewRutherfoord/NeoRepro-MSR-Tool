@@ -1,9 +1,11 @@
+volumes:
+  neo4j:
+  rabbitmq:
 services:
-  #
   neo4j:
     container_name: neo4j
     image: neo4j:latest
-    hostname: 'neo4j'
+    hostname: "neo4j"
     ports:
       - 7474:7474
       - 7687:7687
@@ -13,9 +15,9 @@ services:
       - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
       - NEO4J_PLUGINS=["apoc", "apoc-extended"]
     volumes:
-      - ./volumes/neo4j_db/data:/data
-      - ./volumes/neo4j_db/logs:/logs
-      - ./volumes/neo4j_db/plugins:/plugins
+      - neo4j:/data
+      - neo4j:/logs
+      - neo4j:/plugins
 
       # Location where Database Dump files are stored. Also loaded from here.
       - ./volumes/neo4j_import:/var/lib/neo4j/import
@@ -24,13 +26,12 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
-    hostname: 'rabbitmq'
+    hostname: "rabbitmq"
     ports:
       - "5672:5672"
       - "15672:15672"
     volumes:
-     - ./volumes/rabbitmq/data/:/var/lib/rabbitmq/mnesia/
-     - ./volumes/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - rabbitmq:/var/lib/rabbitmq/mnesia/
     healthcheck:
       # Pings rabbitmq service to check if started
       test: rabbitmq-diagnostics check_port_connectivity
@@ -39,15 +40,19 @@ services:
       retries: 5
 
   driller-worker:
-    build: 
+    build:
       context: ./
       dockerfile: ./driller/Dockerfile
+    environment:
+      - LOG_LEVEL=${DRILLER_LOG_LEVEL}
+      - NEO4J_LOG_LEVEL=${DRILLER_NEO4J_LOG_LEVEL}
+      - RABBITMQ_LOG_LEVEL=${DRILLER_RABBITMQ_LOG_LEVEL}
     env_file: .env
     volumes:
-     - ./driller/:/app/driller/  # For Development
-     - ./common/:/app/common/    # For Development
+      - ./driller/:/app/driller/ # For Development
+      - ./common/:/app/common/ # For Development
 
-     - ./volumes/repos:/app/repositories # Location of Repos to Drill/Where they will be cloned.
+      - ./volumes/repos:/app/repositories # Location of Repos to Drill/Where they will be cloned.
     deploy:
       replicas: 3
     depends_on:
@@ -60,18 +65,18 @@ services:
     container_name: backend
     ports:
       - 8000:8000
-    build: 
+    build:
       context: ./
       dockerfile: ./backend/Dockerfile
     env_file: .env
     network_mode: host
     volumes:
-     - ./backend/:/app/backend/ # For Development
-     - ./common/:/app/common/ # For Development
+      - ./backend/:/app/backend/ # For Development
+      - ./common/:/app/common/ # For Development
 
-     - ./volumes/queries:/app/backend/queries # Location of Cypher Queries
-     - ./volumes/configs:/app/backend/configs # Location of Drill Config Files
-     - ./volumes/neo4j_import/:/app/neo4j_import/
+      - ./volumes/queries:/app/backend/queries # Location of Cypher Queries
+      - ./volumes/configs:/app/backend/configs # Location of Drill Config Files
+      - ./volumes/neo4j_import/:/app/neo4j_import/
     depends_on:
       neo4j:
         condition: service_started
@@ -82,7 +87,7 @@ services:
     container_name: frontend
     ports:
       - 5173:5173
-    build: 
+    build:
       context: ./
       dockerfile: ./frontend/Dockerfile
     volumes:
@@ -91,4 +96,3 @@ services:
       - ./README.md:/app/README.md:ro # For Development
     depends_on:
       - backend
-    

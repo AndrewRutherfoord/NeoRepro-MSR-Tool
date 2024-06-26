@@ -20,11 +20,11 @@ docker compose up -d
 chmod -R 775 neo4j_db/import/
 ```
 
-4. Navigate to http://localhost:5173/
+4. Navigate to <http://localhost:5173/>
 
 ## 3 Operating Modes
 
-This application can be used in  3 different ways, catering to different use cases.
+This application can be used in 3 different ways, catering to different use cases.
 
 ### 1. Interacting with an existing reproduction dataset
 
@@ -38,18 +38,53 @@ TODO: Write this section
 
 TODO: Write this section
 
-## The Configuration Syntax
+## Configuring a Repository Drill
 
-The configuration file is a YAML file that contains the following fields:
+With the drilling yaml configuration you can extract data from a list of Git repositories. The schema is made up of two primary sections:
 
-- `defaults`: Object containing default values for each drill job.
-- `repositores`: List of repositories to be drilled. Defaults from `defaults` are applied to each, unless overridden.
+- `defaults`: Object containing default values which are used for each drill job.
+- `repositores`: List of repositories to be drilled and the configuration for that drill. If a configuration is set in the `defaults` section but not in the individual configuration, then the default is applied.
+
+Here is an example configuration from the Mining Cost awareness case study:
+
+```YAML
+defaults:
+  delete_clone: false
+  index_file_modifications: true
+  pydriller:
+    to: "2022-05-30"
+    only_modifications_with_file_types:
+      - '.tf'
+      - '.tf.json'
+  filters:
+    commit:
+      - field: 'msg'
+        value:
+          - cheap
+          - expens
+          - cost
+          - efficient
+          - bill
+          - pay
+        method: 'contains'
+
+repositories:
+- name: iks_vpc_lab
+  url: https://github.com/ibm-cloud-architecture/iks_vpc_lab.git
+  delete_clone: true
+  pydriller:
+      to: "2023-05-30"
+- name: cloud-platform-terraform-monitoring
+  url: https://github.com/ministryofjustice/cloud-platform-terraform-monitoring.git
+- name: terraform-google-nat-gateway
+  url: https://github.com/GoogleCloudPlatform/terraform-google-nat-gateway.git
+```
 
 ### Defaults
 
 The `defaults` object contains the following fields:
 
-- `pydriller`: Object containing configurations for pydriller `Repository` class. All options explained at [pydriller](https://pydriller.readthedocs.io/en/latest/repository.html).
+- `pydriller`: Object containing configurations for pydriller `Repository` class. This application uses pydriller under the hood to drill the repositories. All options explained at [pydriller](https://pydriller.readthedocs.io/en/latest/repository.html).
   - `since`: Date from which to start drilling. Format: YYYY-MM-DD
   - `to`: Date to which commits should be drilled. Format: YYYY-MM-DD
   - `from_commit`: A commit hash from which to start drilling.
@@ -64,6 +99,7 @@ The `defaults` object contains the following fields:
   - `filepath`: Only commits that modify this file will be included.
   - `only_modifications_with_file_types`: List of string. Only commits that modify files of this type will be included.
 - `filters`: Object containing string filters.
+
   - `commit`: List of filters. (Shown below)
 
 - `delete_clone`: Boolean. Indicates whether to delete the cloned repository after the drilling is complete.
@@ -82,7 +118,6 @@ A filter contains the following fields:
   - `exact`: The value is equal to the field.
   - `!exact`: The value is not equal to the field.
 
-
 ### Repositories
 
 Each repository can contain all of the fields from `defaults` but must also contain the following fields:
@@ -91,8 +126,6 @@ Each repository can contain all of the fields from `defaults` but must also cont
 - `url`: Https url to the repository to clone it in the case it isn't already cloned.
 
 If any values are not provided in the repository, the default values from `defaults` will be used.
-
-
 
 ## Working with Neo4j
 
@@ -115,7 +148,7 @@ RETURN file, batches, source, format, nodes, relationships, properties, time, ro
 CALL apoc.import.cypher.all("all.cypher")
 ```
 
-## Use cases:
+## Use cases
 
 - I'm here to access the data
 - I'm here to replicate the study
@@ -130,9 +163,10 @@ CALL apoc.import.cypher.all("all.cypher")
   - REquirements go here.
 - Design (& IMplementation)
 - Evaluation
+
   - Show that fulfilled requirements
 
 - Discussion (explain limitations)
-  - Lessons learned 
+  - Lessons learned
 - COnclusions
   - THis is how we answered the RQs
