@@ -16,21 +16,17 @@ from fastapi import (
 import logging
 
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from sqlalchemy import case, func
-from sqlmodel import Session, select, delete
+from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
 
-from backend.jobs_queue import DrillerClient, RabbitMQManager
-from backend.database import engine, get_session
+from backend.database import get_session
 from common.models.jobs import (
     Job,
-    JobBase,
     JobCreate,
     JobDetails,
     JobList,
     JobStatus,
-    JobStatusDetails,
     JobStatusOverview,
     JobStatusEnum,
 )

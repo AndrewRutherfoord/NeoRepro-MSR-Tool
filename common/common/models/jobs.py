@@ -55,6 +55,7 @@ class JobStatusBase(SQLModel):
     )
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     job_id: int | None = Field(default=None, foreign_key="job.id")
+    message : str = Field(default="")
 
 
 class JobStatus(JobStatusBase, table=True):

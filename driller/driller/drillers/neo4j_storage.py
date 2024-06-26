@@ -45,8 +45,9 @@ class Neo4jStorage:
         try:
             with self.driver.session() as session:
                 session.run(query, params)
-        except ClientError:
+        except ClientError as e:
             logger.error(f"Query failed '{query}' with args ({params}) ")
+            logger.exception(e)
 
     def _process_batch(self):
         """Runs a batch of cypher commands as a transaciton on the Neo4j DB.

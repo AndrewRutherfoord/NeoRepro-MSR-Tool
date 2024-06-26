@@ -33,9 +33,9 @@ class RepositoryNeo4jStorage(Neo4jStorage, RepositoryDataStorage):
             session.run(
                 "CREATE CONSTRAINT IF NOT EXISTS FOR (r:Repository) REQUIRE r.name IS UNIQUE"
             )
-            session.run(
-                "CREATE CONSTRAINT IF NOT EXISTS FOR (b:Branch) REQUIRE b.hash IS UNIQUE"
-            )
+            # session.run(
+            #     "CREATE CONSTRAINT IF NOT EXISTS FOR (b:Branch) REQUIRE b.hash IS UNIQUE"
+            # )
             session.run(
                 "CREATE CONSTRAINT IF NOT EXISTS FOR (d:Developer) REQUIRE d.email IS UNIQUE"
             )

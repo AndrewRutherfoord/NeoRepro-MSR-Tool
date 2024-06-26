@@ -1,16 +1,14 @@
 from contextlib import asynccontextmanager
 import os
 
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 import logging
 
-from sqlmodel import Session, select
 
-from backend.database import create_db_and_tables, engine
 from backend.jobs_queue import DrillerClient
-from backend.routers import driller_router, files,job_statuses
+from backend.routers import driller_router, files, job_statuses
 
 logger = logging.getLogger(__name__)
 
@@ -63,9 +61,7 @@ async def lifespan(app: FastAPI):
     await teardown_jobs_queue()
 
 
-app = FastAPI(
-    dependencies=[Depends(get_client)], lifespan=lifespan
-)
+app = FastAPI(dependencies=[Depends(get_client)], lifespan=lifespan)
 
 app.include_router(driller_router.router)
 app.include_router(files.router)
@@ -85,6 +81,6 @@ app.add_middleware(
 )
 
 
-@app.get('/healthcheck')
+@app.get("/healthcheck")
 def get_healthcheck():
-    return 'OK'
+    return "OK"

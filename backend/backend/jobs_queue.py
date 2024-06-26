@@ -1,4 +1,4 @@
-import asyncio, json, logging, os, queue, threading, time
+import asyncio, json, logging
 from typing import MutableMapping
 import uuid
 from aio_pika import IncomingMessage, Message, connect, Channel, RobustConnection
@@ -11,12 +11,10 @@ from aio_pika.abc import (
     AbstractQueue,
 )
 
-import logging
-
 from sqlmodel import Session
-from backend.database import engine, get_session
+from backend.database import engine
 from backend.ws_connection_manager import socket_connections
-from common.models.jobs import Job, JobStatus, JobDetails
+from common.models.jobs import Job, JobStatus
 
 logger = logging.getLogger(__name__)
 
@@ -24,15 +22,15 @@ logger = logging.getLogger(__name__)
 class RabbitMQManager:
     def __init__(self, url: str, queue_name="fastapi", callback_queue_name="logs"):
         self._url = url
-        self._connection: RobustConnection = None
-        self._channel: Channel = None
+        self._connection: AbstractConnection | None = None
+        self._channel: AbstractChannel | None = None
         self.queue_name = queue_name
         self._queue = None
         self.callback_queue_name = callback_queue_name
         self._callback_queue = None
 
-    async def get_channel(self) -> Channel:
-        if not self._connection:
+    async def get_channel(self) -> AbstractChannel:
+        if self._connection is None:
             self._connection = await connect(self._url)
 
         if not self._channel or self._channel.is_closed:
@@ -77,10 +75,13 @@ class DrillerClient(object):
 
         logger.warning(message.body)
         response = json.loads(message.body)
+
         job_id = response.get("job_id")
         status = response.get("status")
+        message = response.get("message")
+
         with Session(engine) as session:
-            job_status = JobStatus(job_id=job_id, status=status)
+            job_status = JobStatus(job_id=job_id, status=status, message=message)
             session.add(job_status)
             session.commit()
             session.refresh(job_status)
@@ -95,7 +96,7 @@ class DrillerClient(object):
             ws_token="1",
         )
 
-    async def call(self, body: str) -> str:
+    async def call(self, body: str):
         correlation_id = str(uuid.uuid4())
         logger.debug(f"Sending message {correlation_id}: {body}")
 
@@ -110,5 +111,5 @@ class DrillerClient(object):
         )
 
     async def close(self):
-        self.channel.close()
-        self.connection.close()
+        await self.channel.close()
+        await self.connection.close()

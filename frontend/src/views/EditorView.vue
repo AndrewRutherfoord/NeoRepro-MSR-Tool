@@ -1,27 +1,47 @@
 <template>
   <v-app-bar>
-    <v-app-bar-title>Editor</v-app-bar-title>
+    <v-app-bar-title>Drill Config Editor</v-app-bar-title>
     <template v-slot:append>
-      <v-btn class="mx-2" variant="outlined" color="green" @click="checkConfig" prepend-icon="mdi-check">Check
-        Config</v-btn>
-      <v-btn variant="outlined" @click="executeDrillJob">Execute
-        Drill Job</v-btn>
+      <v-btn
+        class="mx-2"
+        variant="outlined"
+        color="green"
+        @click="checkConfig"
+        prepend-icon="mdi-check"
+        >Check Config</v-btn
+      >
+      <v-btn variant="outlined" @click="executeDrillJob">Execute Drill Job</v-btn>
     </template>
   </v-app-bar>
 
   <vue-splitter initial-percent="20" style="height: 100%">
     <template #left-pane>
-      <file-tree-sidebar title="Saved Configs" subtitle="Click on one to open it and then execute it."
-        @link-clicked="openFile" @delete-file="deleteConfiguration" @create-file="openNewFile" :data="files"
-        :is-loading="filesIsLoading"></file-tree-sidebar>
+      <file-tree-sidebar
+        title="Saved Configs"
+        subtitle="Click on one to open it and then execute it."
+        @link-clicked="openFile"
+        @delete-file="deleteConfiguration"
+        @create-file="openNewFile"
+        :data="files"
+        :is-loading="filesIsLoading"
+      ></file-tree-sidebar>
     </template>
     <template #right-pane>
       <div class="d-flex justify-space-between">
-        <v-breadcrumbs class="py-2" :items="currentFile ? currentFile.split('/') : ['new-file.json']"></v-breadcrumbs>
-        <v-btn class="mt-1 me-3" size="compact" variant="text" @click="saveConfiguration" icon="mdi-content-save"
-          :disabled="!unsavedChanges"></v-btn>
+        <v-breadcrumbs
+          class="py-2"
+          :items="currentFile ? currentFile.split('/') : ['new-file.json']"
+        ></v-breadcrumbs>
+        <v-btn
+          class="mt-1 me-3"
+          size="compact"
+          variant="text"
+          @click="saveConfiguration"
+          icon="mdi-content-save"
+          :disabled="!unsavedChanges"
+        ></v-btn>
       </div>
-      <hr>
+      <hr />
       <!-- {{ currentFile }} -->
       <v-sheet height="100vh">
         <Editor v-model="content" @save="saveConfiguration"></Editor>
@@ -30,17 +50,16 @@
   </vue-splitter>
 </template>
 
-
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import axios, { AxiosError } from "axios";
-import yaml from 'js-yaml';
+import { computed, onMounted, ref } from 'vue'
+import axios, { AxiosError } from 'axios'
+import yaml from 'js-yaml'
 
-import { useRoute, useRouter } from 'vue-router';
-import { useRepositoryList } from '@/composables/useRepositoryList';
-import { useYamlValidation } from '@/composables/useYamlValidation';
-import { useConfirmLeavePage } from '@/composables/useConfirmLeavePage';
-import { useToast } from '@/composables/useToast';
+import { useRoute, useRouter } from 'vue-router'
+import { useRepositoryList } from '@/composables/useRepositoryList'
+import { useYamlValidation } from '@/composables/useYamlValidation'
+import { useConfirmLeavePage } from '@/composables/useConfirmLeavePage'
+import { useToast } from '@/composables/useToast'
 
 import { ConfigurationFileRepository } from '../repositores/FileRepository'
 
@@ -51,20 +70,19 @@ import initial from '../assets/initial.yaml?raw'
 import schema from '../../../schemas/schema.json?raw'
 import Editor from '../components/Editor.vue'
 
-
 const router = useRouter()
 const route = useRoute()
 
-const configurationsRepository = new ConfigurationFileRepository();
+const configurationsRepository = new ConfigurationFileRepository()
 
-const toast = useToast();
+const toast = useToast()
 
 // Editor content.
-const currentFile = ref<string | null>(null);
-const content = ref<string>("");
+const currentFile = ref<string | null>(null)
+const content = ref<string>('')
 
 // Most recently saved content. Used to compare with current content to see if it has changed.
-const savedContent = ref<string>("");
+const savedContent = ref<string>('')
 
 const unsavedChanges = computed(() => content.value !== savedContent.value)
 
@@ -74,8 +92,8 @@ onMounted(async () => {
     currentFile.value = route.query.file as string
     await openFile(route.query.file as string)
   } else {
-    content.value = initial;
-    savedContent.value = content.value;
+    content.value = initial
+    savedContent.value = content.value
   }
 })
 
@@ -88,9 +106,9 @@ const { valid, error, validate } = useYamlValidation(schema, content)
  */
 function checkConfig() {
   if (validate()) {
-    toast.success("Configuration is valid!")
+    toast.success('Configuration is valid!')
   } else {
-    toast.error("Configuration Invalid.", error.value ? error.value : '')
+    toast.error('Configuration Invalid.', error.value ? error.value : '')
   }
 }
 
@@ -107,18 +125,17 @@ async function executeDrillJob() {
   }
 
   try {
-    let response = axios.post("http://127.0.0.1:8000/jobs/", yaml.load(content.value))
-    toast.success("Jobs have been sent successfully.")
+    let response = axios.post('http://127.0.0.1:8000/jobs/', yaml.load(content.value))
+    toast.success('Jobs have been sent successfully.')
   } catch (e) {
-    toast.error("Could not create jobs.")
+    toast.error('Could not create jobs.')
     console.error(e)
   }
-
 }
 
 // ----- Confirm Leave when unsaved changes -----
 
-const confirmLeaveMessage = "You have unsaved changes. Are you sure you want to leave ?";
+const confirmLeaveMessage = 'You have unsaved changes. Are you sure you want to leave ?'
 
 // Inverse of unsaved changes. If true, the page can be left without showing the dialog.
 const leavable = computed(() => !unsavedChanges.value)
@@ -126,11 +143,14 @@ const leavable = computed(() => !unsavedChanges.value)
 // Shows the confirm leave dialog when there are unsaved changes.
 useConfirmLeavePage(confirmLeaveMessage, leavable)
 
-
 // ----- Saving Configurations -----
 
 // List of all the configuration files.
-const { items: files, loading: filesIsLoading, fetchItems: getConfigFilesList } = useRepositoryList(configurationsRepository);
+const {
+  items: files,
+  loading: filesIsLoading,
+  fetchItems: getConfigFilesList
+} = useRepositoryList(configurationsRepository)
 
 /**
  * On selection of file in sidebar, load the file and set the content.
@@ -140,21 +160,21 @@ async function openFile(path: string) {
   try {
     let response = await configurationsRepository.getById(path)
     console.log(response)
-    content.value = response.data;
-    savedContent.value = content.value;
-    currentFile.value = path;
+    content.value = response.data
+    savedContent.value = content.value
+    currentFile.value = path
     router.replace({ query: { file: path } })
   } catch (e) {
     if (axios.isAxiosError(e)) {
       if (e.response?.status === 404) {
-        toast.error("File not found.")
+        toast.error('File not found.')
       } else {
-        toast.error("Failed to load file.")
+        toast.error('Failed to load file.')
       }
     } else {
-      toast.error("Failed to load file.")
+      toast.error('Failed to load file.')
     }
-    openNewFile();
+    openNewFile()
   }
 }
 
@@ -163,8 +183,8 @@ async function openFile(path: string) {
  * Sets current file name to null to indicate that a new file is being created.
  */
 async function openNewFile() {
-  content.value = initial;
-  currentFile.value = null;
+  content.value = initial
+  currentFile.value = null
   router.replace({})
 }
 
@@ -172,9 +192,9 @@ async function openNewFile() {
  * Saves the current configuration file.
  */
 async function saveConfiguration() {
-  let filename = currentFile.value;
+  let filename = currentFile.value
   if (filename === null) {
-    filename = prompt("What do you want to name the configuration file?")
+    filename = prompt('What do you want to name the configuration file?')
   }
   if (filename == null) {
     // User cancelled the save.
@@ -183,16 +203,15 @@ async function saveConfiguration() {
   let response = await configurationsRepository.update(filename, { content: content.value })
 
   if (response.status === 200) {
-    toast.success("Saved configuration to new file.")
+    toast.success('Saved configuration to new file.')
   } else if (response.status === 201) {
-    toast.success("Updated saved configuration file.")
+    toast.success('Updated saved configuration file.')
   }
 
-  currentFile.value = filename;
-  savedContent.value = content.value;
+  currentFile.value = filename
+  savedContent.value = content.value
 
   await getConfigFilesList()
-
 }
 
 async function deleteConfiguration(path: string) {
@@ -200,19 +219,18 @@ async function deleteConfiguration(path: string) {
   try {
     if (ok) {
       let response = await configurationsRepository.delete(path)
-      toast.success("COnfiguration file deleted.")
+      toast.success('COnfiguration file deleted.')
       // If the deleted file is the current file, open a clean new file.
       if (path === currentFile.value) {
         openNewFile()
       }
       await getConfigFilesList()
     } else {
-      toast.warn("Deletion cancelled.")
+      toast.warn('Deletion cancelled.')
     }
   } catch (e) {
     console.error(e)
-    toast.error("Failed to delete query.")
+    toast.error('Failed to delete query.')
   }
 }
-
 </script>

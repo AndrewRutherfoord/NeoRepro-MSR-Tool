@@ -67,7 +67,7 @@ class QueueRepositoryNeo4jDrillerWorker(QueueWorker):
                 repository.apply_defaults(drill_config.defaults)
 
             # Set path to clone or find repo based on location where repo clones are stored in container.
-            repo_path = f"{self.clone_location}{repository.name}"
+            repo_path = f"{self.clone_location}/{repository.name}"
 
             # Clone Repository if url exists. Throws `LookupError` if problem cloning repo.
             if repository.url is not None:
