@@ -35,7 +35,7 @@ async def teardown_jobs_queue():
     driller_client = None
 
 
-async def get_client(request: Request) -> RabbitMessageQueueRPC:
+async def get_client(request: Request = None) -> RabbitMessageQueueRPC:
     """Gets the RabbitMQ Driller RPC Client
     To be used with dependency ejection for endpoint to access the RPC client.
     """
