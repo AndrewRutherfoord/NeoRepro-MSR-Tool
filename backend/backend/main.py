@@ -44,9 +44,11 @@ async def get_client(request: Request = None) -> RabbitMessageQueueRPC:
     if driller_client is None or driller_client.connection.is_closed:
         raise ConnectionError("Could not connect to RabbitMQ client.")
 
-    # Sets the drill client state in request. Can be accessed in endpoint with request injection and `request.state.driller_client`
-    request.state.driller_client = driller_client
-    return driller_client
+    if request is not None:
+        # Sets the drill client state in request. Can be accessed in endpoint with request injection and `request.state.driller_client`
+        request.state.driller_client = driller_client
+        return driller_client
+    return None
 
 
 # ---------- FastAPi ----------

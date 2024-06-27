@@ -51,7 +51,7 @@ class RabbitMessageQueueRPC(ABC):
         return self
 
     @abstractmethod
-    async def process_response(self, body: dict):
+    async def process_response(self, response: dict) -> None:
         pass
 
     async def on_response(self, message: AbstractIncomingMessage) -> None:
@@ -62,7 +62,7 @@ class RabbitMessageQueueRPC(ABC):
         logger.warning(message.body)
         response = json.loads(message.body)
 
-        self.process_response(response)
+        await self.process_response(response)
 
     async def call(self, body: str):
         correlation_id = str(uuid.uuid4())
@@ -109,11 +109,10 @@ class RepositoryDrillerClient(RabbitMessageQueueRPC):
             session.refresh(job_status)
 
             job = session.get(Job, job_id)
-
+        logger.warning("Sedning socket message")
         await socket_connections.send_message(
             {
                 "job_status": job_status.model_dump(),
                 "job": job.model_dump(),
             },
-            ws_token="1",
         )

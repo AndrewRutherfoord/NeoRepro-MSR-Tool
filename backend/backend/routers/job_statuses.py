@@ -30,9 +30,8 @@ async def websocket_endpoint(
     *,
     websocket: WebSocket,
 ):
-    # TODO: Some key??
-    ws_token = "1"
-    await socket_connections.connect(websocket, ws_token=ws_token)
+    await socket_connections.connect(websocket)
+    logger.warning("WS COnnect")
     try:
         while True:
             logger.info(socket_connections)
@@ -40,7 +39,7 @@ async def websocket_endpoint(
             logger.info(f"Received text: {text}")
 
     except WebSocketDisconnect:
-        socket_connections.disconnect(websocket, ws_token=ws_token)
+        socket_connections.disconnect(websocket)
 
 
 @router.post("/jobs/status/")
