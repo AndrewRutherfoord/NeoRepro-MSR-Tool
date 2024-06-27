@@ -58,7 +58,7 @@ import yaml from 'js-yaml'
 import { useRoute, useRouter } from 'vue-router'
 import { useRepositoryList } from '@/composables/useRepositoryList'
 import { useYamlValidation } from '@/composables/useYamlValidation'
-import { useConfirmLeavePage } from '@/composables/useConfirmLeavePage'
+import useConfirmLeavePage from '@/composables/useConfirmLeavePage'
 import { useToast } from '@/composables/useToast'
 
 import { ConfigurationFileRepository } from '../repositores/FileRepository'

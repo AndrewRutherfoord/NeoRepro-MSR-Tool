@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, type Ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, type Ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 
 /**
@@ -7,13 +7,21 @@ import { onBeforeRouteLeave } from 'vue-router'
  * @param confirmLeaveMessage Message to show in the dialog.
  * @param leavable Boolean that indicates whether the page can be left without showing the dialog.
  */
-export function useConfirmLeavePage(confirmLeaveMessage: string, leavable: Ref<boolean>) {
+export default function useConfirmLeavePage(confirmLeaveMessage: string, leavable: Ref<boolean>, invert = false) {
+  
+  const canLeave = computed(() => {
+    if (invert) {
+      return !leavable.value
+    }
+    return leavable.value
+  })
+
   /**
    * Before reloading the page, checks if there are unsaved changes and shows a confirm leave dialog.
    */
   function beforeReload(event: { returnValue: string }) {
     // To show confirm leave dialog.
-    if (!leavable.value) {
+    if (!canLeave.value) {
       event.returnValue = confirmLeaveMessage // Needed for some browsers
       return confirmLeaveMessage
     }
@@ -34,7 +42,7 @@ export function useConfirmLeavePage(confirmLeaveMessage: string, leavable: Ref<b
    * Before a route change, checks if there are unsaved changes and shows a confirm leave dialog.
    */
   onBeforeRouteLeave(() => {
-    if (!leavable.value && !confirm(confirmLeaveMessage)) {
+    if (!canLeave.value && !confirm(confirmLeaveMessage)) {
       return false
     }
     return true

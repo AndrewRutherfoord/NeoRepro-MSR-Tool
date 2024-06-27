@@ -9,18 +9,11 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
-from fastapi.responses import HTMLResponse
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from common.models.jobs import (
-    Job,
-    JobBase,
-    JobCreate,
-    JobDetails,
-    JobList,
     JobStatus,
     JobStatusDetails,
-    JobStatusOverview,
 )
 
 from backend.database import get_session
@@ -54,13 +47,17 @@ async def websocket_endpoint(
 def create_job_status(
     *, session: Session = Depends(get_session), job_status: JobStatus
 ):
+    """Creates a Job Status in the database. Mostly for testing as the
+    job statuses should be created based on reponses from the workers"""
     session.add(job_status)
     session.commit()
     session.refresh(job_status)
     return job_status
 
+
 @router.get("/jobs/status/{job_status_id}", response_model=JobStatusDetails)
 def detail_job_status(*, session: Session = Depends(get_session), job_status_id: int):
+    """Get a particular job status based on the id"""
     job_status = session.get(JobStatus, job_status_id)
     if not job_status:
         raise HTTPException(status_code=404, detail="Job not found")

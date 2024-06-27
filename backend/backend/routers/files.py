@@ -22,8 +22,13 @@ QUERIES_PATH = "queries"
 CONFIGS_PATH = "configs"
 DB_EXPORTS_PATH = "../neo4j_import"
 
+# This file contains the endpoints for managing saved query and config file.
+# Also has list method for Neo4j import
 
+
+# ---------- File Management Methods ----------
 def get_file_list(path):
+    """Returns a list of files from the base path"""
     files_structure = {}
 
     for root, dirs, files in os.walk(path):
@@ -66,6 +71,7 @@ def save_file(path, file_name, content):
 
 
 def delete_file(path, file_name):
+    """Deletes a given file and then deletes any directories it was in that are empty"""
     file_path = os.path.join(path, file_name)
     if os.path.isfile(file_path):
         os.remove(file_path)
@@ -82,16 +88,16 @@ def delete_file(path, file_name):
         raise FileNotFoundError()
 
 
+class SaveBody(BaseModel):
+    content: str
+
+
 # ----- Query Files -----
 
 
 @router.get("/queries/", response_model=dict)
-async def list_files():
+async def list_query_files():
     return get_file_list(QUERIES_PATH)
-
-
-class SaveBody(BaseModel):
-    content: str
 
 
 @router.post("/queries/{path:path}")
@@ -124,12 +130,12 @@ async def delete_query_file(path: str):
 
 
 @router.get("/configs/", response_model=dict)
-async def list_files():
+async def list_config_files():
     return get_file_list(CONFIGS_PATH)
 
 
 @router.post("/configs/{path:path}")
-async def save_query_file(path: str, body: SaveBody):
+async def save_config_file(path: str, body: SaveBody):
     print(f"Saving config file {path}")
     try:
         created = save_file(CONFIGS_PATH, path, body.content)
@@ -139,7 +145,7 @@ async def save_query_file(path: str, body: SaveBody):
 
 
 @router.get("/configs/{path:path}")
-async def get_query_file(path: str):
+async def get_config_file(path: str):
     file_path = os.path.join(CONFIGS_PATH, path)
     if os.path.isfile(file_path):
         return FileResponse(file_path)
@@ -148,15 +154,19 @@ async def get_query_file(path: str):
 
 
 @router.delete("/configs/{path:path}")
-async def delete_query_file(path: str):
+async def delete_config_file(path: str):
     try:
         delete_file(CONFIGS_PATH, path)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
-    
+
+
 # ----- DB Export Files -----
+
 
 @router.get("/db-exports/", response_model=dict)
 async def list_files():
+    """Lists the Neo4j DB Exports
+    Requires that the Neo4j import folder is accessible through a volume.
+    """
     return get_file_list(DB_EXPORTS_PATH)
-

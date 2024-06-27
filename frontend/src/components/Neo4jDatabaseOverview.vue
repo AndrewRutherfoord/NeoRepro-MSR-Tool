@@ -31,7 +31,7 @@
 import { useNeo4j } from '@/composables/useNeo4j';
 import { onMounted } from 'vue';
 
-const { runQuery, error, loading, result, headers } = useNeo4j('neo4j://localhost:7687', 'neo4j', 'neo4j123');
+const { runQuery, error, loading, result, headers } = useNeo4j();
 
 onMounted(() => {
     getData();

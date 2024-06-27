@@ -101,7 +101,7 @@ onMounted(async () => {
 
 // ----- Executing Neo4j Queries -----
 
-const { runQuery, error, loading, result, headers } = useNeo4j('neo4j://localhost:7687', 'neo4j', 'neo4j123');
+const { runQuery, error, loading, result, headers } = useNeo4j();
 
 const tableHeaders = computed(() => {
   let result = headers.value?.map((h) => ({ title: h, key: h }));

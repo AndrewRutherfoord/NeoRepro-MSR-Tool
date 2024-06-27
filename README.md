@@ -1,6 +1,14 @@
 # Graph DB MSR Tool
 
+A tool for mining software repositories and creating replication packages using a Neo4j Graph Database. This tool aims to do 3 things:
+
+- Reduce scripting effort for drilling repository data
+- Provide a simple interface for querying drilled data
+- Allow easily creating a replication package which can be distrubted
+
 ## Executing the Project
+
+This project is built with docker and must be run with docker:
 
 1. Copy env from example:
 
@@ -17,7 +25,7 @@ docker compose up -d
 3. Change the permissions of the import directory. This is necessary so that the backend can access the import directory.
 
 ```bash
-chmod -R 775 neo4j_db/import/
+chmod -R 775 volumes/neo4j_import/
 ```
 
 4. Navigate to <http://localhost:5173/>
@@ -28,7 +36,7 @@ This application can be used in 3 different ways, catering to different use case
 
 ### 1. Interacting with an existing reproduction dataset
 
-TODO: Write this section
+If you are here to interact with a replication package that was created by a line of research.
 
 ### 2. Reproduce a study using the replication package
 

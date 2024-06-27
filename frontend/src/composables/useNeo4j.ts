@@ -1,7 +1,9 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import neo4j, { Driver, Session } from 'neo4j-driver'
+import { useNeo4jAuthStore } from '@/stores/neo4jStore'
+import { storeToRefs } from 'pinia'
 
-export function useNeo4j(uri: string, user: string, password: string) {
+export function useNeo4j() {
   const driver = ref<Driver | null>(null)
   const session = ref<Session | null>(null)
   const error = ref<any>(null)
@@ -11,9 +13,15 @@ export function useNeo4j(uri: string, user: string, password: string) {
   const headers = ref<string[] | null>(null)
   const notifications = ref<any>(null)
 
+  const store = useNeo4jAuthStore()
+  const { host, port, user, password } = storeToRefs(store)
+
   // Initialize the driver and session
   const initialize = () => {
-    driver.value = neo4j.driver(uri, neo4j.auth.basic(user, password))
+    driver.value = neo4j.driver(
+      `neo4j://${host.value}:${port.value}`,
+      neo4j.auth.basic(user.value, password.value)
+    )
     session.value = driver.value.session()
   }
 
@@ -47,7 +55,7 @@ export function useNeo4j(uri: string, user: string, password: string) {
       if (resultSet.records.length > 0) {
         headers.value = resultSet.records[0].keys
       }
-      
+
       loading.value = false
       return resultSet
     } catch (err) {
@@ -55,6 +63,25 @@ export function useNeo4j(uri: string, user: string, password: string) {
       error.value = err
       throw err
     }
+  }
+
+  const backupDatabase = async (filename: string) => {
+    return await runQuery(`CALL apoc.export.cypher.all("${filename}", 
+        {format: "cypher-shell",useOptimizations: {type: "UNWIND_BATCH", unwindBatchSize: 20}}) 
+        YIELD file, batches, source, format, nodes, relationships, properties, time, rows, batchSize 
+        RETURN file, batches, source, format, nodes, relationships, properties, time, rows, batchSize;`)
+  }
+
+  const clearDatabase = async () => {
+    await runQuery(`MATCH (n) DETACH DELETE n`)
+    console.log("1")
+    await runQuery(`CALL apoc.schema.assert({},{},true) YIELD label, key RETURN *`)
+    console.log("2")
+  }
+
+  const restoreDatabaseBackup = async (filename:string) => {
+    console.log(3)
+    return await runQuery(`CALL apoc.cypher.runFile("${filename}")`)
   }
 
   onMounted(() => {
@@ -69,6 +96,9 @@ export function useNeo4j(uri: string, user: string, password: string) {
     initialize,
     close,
     runQuery,
+    clearDatabase,
+    backupDatabase,
+    restoreDatabaseBackup,
     error,
     loading,
     result,
