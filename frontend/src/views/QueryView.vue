@@ -66,7 +66,7 @@ import FileTreeSidebar from '../components/FileTreeList.vue'
 import CypherCodeMirror from '../components/CypherCodeMirror.vue';
 import QueryDataDialog from '../components/QueryDataDialog.vue'
 import { QueryFileRepository } from '@/repositores/FileRepository';
-import { useConfirmLeavePage } from '@/composables/useConfirmLeavePage';
+import useConfirmLeavePage from '@/composables/useConfirmLeavePage';
 
 const router = useRouter()
 const route = useRoute()
