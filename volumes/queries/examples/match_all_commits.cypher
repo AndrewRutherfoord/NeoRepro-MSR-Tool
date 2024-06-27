@@ -1,0 +1,1 @@
+MATCH (c:Commit) RETURN c
