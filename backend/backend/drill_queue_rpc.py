@@ -24,7 +24,8 @@ class RabbitMessageQueueRPC(ABC):
     """This is an implementation of a remote procedure call based on
     https://aio-pika.readthedocs.io/en/latest/rabbitmq-tutorial/6-rpc.html
     Calls a function on a remote worker that executes a job.
-    Waits for callback messages.
+    Waits for callback messages. And executes `process_response` on the message.
+    `process_response` shoud be overridden with handling of message.
     """
 
     connection: AbstractConnection
@@ -97,10 +98,13 @@ class RepositoryDrillerClient(RabbitMessageQueueRPC):
     callback_queue: AbstractQueue
 
     async def process_response(self, response: dict) -> None:
-
-        job_id = response.get("job_id")
-        status = response.get("status")
-        message = response.get("message")
+        try:
+            job_id = response.get("job_id")
+            status = response.get("status")
+            message = response.get("message", "")
+        except KeyError as e:
+            logger.error(f"Queue Response is missing key {e}")
+            return
 
         with Session(engine) as session:
             job_status = JobStatus(job_id=job_id, status=status, message=message)
@@ -109,7 +113,7 @@ class RepositoryDrillerClient(RabbitMessageQueueRPC):
             session.refresh(job_status)
 
             job = session.get(Job, job_id)
-        logger.warning("Sedning socket message")
+        logger.debug("Sending socket message")
         await socket_connections.send_message(
             {
                 "job_status": job_status.model_dump(),
