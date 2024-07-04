@@ -23,7 +23,7 @@ export class FileRepository
     DeleteItemRepository
 {
   constructor(endpoint: string) {
-    super(endpoint)
+    super(`files/${endpoint}`)
   }
 
   async getAll(): Promise<AxiosResponse<Object[]>> {
