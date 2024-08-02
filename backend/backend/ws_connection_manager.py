@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
-    """Stores connected notification websockets so that on messsage queue responses a notification can be sent"""
+    """Stores connected notification websockets so that on message queue responses a notification can be sent"""
 
     def __init__(self):
         self.active_connections = []

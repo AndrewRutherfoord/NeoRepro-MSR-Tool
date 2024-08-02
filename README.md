@@ -2,9 +2,9 @@
 
 A tool for mining software repositories and creating replication packages using a Neo4j Graph Database. This tool aims to do 3 things:
 
-- Reduce scripting effort for drilling repository data
-- Provide a simple interface for querying drilled data
-- Allow easily creating a replication package which can be distrubted
+- Reduce scripting effort for drilling repository data.
+- Provide a simple interface for querying drilled data.
+- Allow easily creating a replication package which can be distributed.
 
 ## Executing the Project
 
@@ -30,6 +30,14 @@ chmod -R 775 volumes/neo4j_import/
 
 4. Navigate to <http://localhost:5173/>
 
+## Structure of the System
+
+The system is split into seperate docker containers that communicated between one another.
+
+![Architecture](./images/system-architecture.png)
+
+RabbitMQ is used for evenly distributing drill jobs between multiple instances of the driller workers.
+
 ## 3 Operating Modes
 
 This application can be used in 3 different ways, catering to different use cases.
@@ -40,20 +48,22 @@ If you are here to interact with a replication package that was created by a lin
 
 ### 2. Reproduce a study using the replication package
 
-TODO: Write this section
+For researchers who wish to validate the findings of the study.
 
 ### 3. Create a new study
 
-TODO: Write this section
+For researchers who wish to start a new study from scratch with NeoRepro. The NeoRepro repository
+must be cloned and used as a template for the new project.
 
 ## Configuring a Repository Drill
 
-With the drilling yaml configuration you can extract data from a list of Git repositories. The schema is made up of two primary sections:
+With the drilling yaml configuration you can extract data from a list of Git repositories. In the
+tool you will find an example drill configuration. The schema is made up of two primary sections:
 
 - `defaults`: Object containing default values which are used for each drill job.
 - `repositores`: List of repositories to be drilled and the configuration for that drill. If a configuration is set in the `defaults` section but not in the individual configuration, then the default is applied.
 
-Here is an example configuration from the Mining Cost awareness case study:
+Here is a snippet of a configuration from the Mining Cost awareness case study (https://github.com/AndrewRutherfoord/cloud-cost-awareness-NeoRepro-reproduction):
 
 ```YAML
 defaults:
@@ -135,46 +145,45 @@ Each repository can contain all of the fields from `defaults` but must also cont
 
 If any values are not provided in the repository, the default values from `defaults` will be used.
 
-## Working with Neo4j
+### Executing the drill job
 
-### Exporting the Database
+Once the drill configuration file has been composed on the frontend of NeoRepro, the `Execute`
+button on the Drill configration page can be clicked in order to commence the drilling of the
+repositories based on the configuration file.
 
-Exports the database to a file in the `import` directory of Neo4j.
+To view the status of the drill jobs, navigate to the job status page of the frontend. Here you can
+see which repositories are being drilled currenly, which are pending, which have failed and which
+are complete.
 
-```
-CALL apoc.export.cypher.all("all.cypher", {
-    format: "cypher-shell",
-    useOptimizations: {type: "UNWIND_BATCH", unwindBatchSize: 20}
-})
-YIELD file, batches, source, format, nodes, relationships, properties, time, rows, batchSize
-RETURN file, batches, source, format, nodes, relationships, properties, time, rows, batchSize;
-```
+The time taken to drill will vary widely depending on the configurations set earlier and the number
+of Driller Workers that are running. By default NeoRepro has 3 Driller Workers running which will
+drill 3 repositories simultaneously. If your computer can handle it, you can increase this by
+changing the number of `replicas` in the Docker Compose file.
 
-### Importing the Database
+## Querying the dataset with Neo4j
 
-```
-CALL apoc.import.cypher.all("all.cypher")
-```
+Once the drilling is complete, all of the repository data will be contained in the Neo4j Graph
+Database. The Cypher query language (https://neo4j.com/docs/cypher-manual/current/introduction/) can
+be used to query the data. There are some example queries pre-populated in NeoRepro.
 
-## Use cases
+To query the dataset, navigate to http://localhost:5173/query . Saved queries can be found on the
+left side. You can compose a new query by writing in the query box at the top of the page. Hitting
+execute will send the query to the Neo4j and the response will be shown just below the query box.
 
-- I'm here to access the data
-- I'm here to replicate the study
-- I'm here to create a replication package
+You can download the result of the query in the JSON format.
 
-## Outline
+Queries can also be executed through the Neo4j interface that comes with the Neo4j docker container.
+This can be accessed at http://localhost:7474/
 
-- Intro
-- Related Works
-  - Say here why not using GraphRepo
-- Case Study - Looking at cost awareness
-  - REquirements go here.
-- Design (& IMplementation)
-- Evaluation
+## Database Backups
 
-  - Show that fulfilled requirements
+At any point you can take a database backup of the current state. This will produce a `.cypher` file
+which can be used to restore the database to it's current state. This is done on the manage DB page
+(http://localhost:5173/manage-database). You can reload a snapshot of the database that you have
+saved previously.
 
-- Discussion (explain limitations)
-  - Lessons learned
-- COnclusions
-  - THis is how we answered the RQs
+> **Warning!** Loading a database snapshot will delete the current data in the database.
+
+On the manage DB page you can delete all data from the database if you would like.
+
+The manage DB page also shows some general information about the current state of the database.

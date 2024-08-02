@@ -20,8 +20,8 @@ logger.addHandler(logging.StreamHandler())
 # Also has list method for Neo4j import
 router = APIRouter()
 
-QUERIES_PATH = "queries"
-CONFIGS_PATH = "configs"
+QUERIES_PATH = "../queries"
+CONFIGS_PATH = "../configs"
 DB_EXPORTS_PATH = "../neo4j_import"
 
 
@@ -45,12 +45,21 @@ def get_file_type(file_type: str):
 
 
 def get_file_list(path):
-    """Returns a list of files from the base path"""
+    """Returns a list of files from the base path
+    Returns a dict where key is file or folder name. If value null, then file. If folder, then
+    returns value is a dict of same structure.  
+    """
     files_structure = {}
 
     for root, dirs, files in os.walk(path):
         path = root.split(os.sep)
         subdir = files_structure
+
+        # If relative path starts with `..` then remove it so pathing isn't too deep on frontend.
+        if (path[0] == '..'):
+            path = path[1:]
+
+        # Remove base path
         for sub in path[1:]:
             subdir = subdir.setdefault(sub, {})
         subdir.update({file: None for file in files})
@@ -60,6 +69,7 @@ def get_file_list(path):
 
 @router.get("/files/{file_type:str}/", response_model=dict)
 async def list_files(file_type: str):
+    # Returns a list of files/folders in a dict based on file type given.
     base_path = get_file_type(file_type)
     return get_file_list(base_path)
 

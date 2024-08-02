@@ -64,9 +64,11 @@ async def lifespan(app: FastAPI):
     # Disconnect the queue on teardown.
     await teardown_jobs_queue()
 
-
+# Instantiate app with global dependency injection and the lifespan
+# `get_client` adds the Rabbit MQ RPC instance to the request object
 app = FastAPI(dependencies=[Depends(get_client)], lifespan=lifespan)
 
+# Attach the routers to the FastAPI App
 app.include_router(driller_router.router)
 app.include_router(files.router)
 app.include_router(job_statuses.router)
@@ -87,4 +89,5 @@ app.add_middleware(
 
 @app.get("/healthcheck")
 def get_healthcheck():
+    """Endpoint to use to check backend life."""
     return "OK"
