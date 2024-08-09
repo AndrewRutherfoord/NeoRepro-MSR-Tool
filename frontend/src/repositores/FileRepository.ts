@@ -1,8 +1,8 @@
 import type { AxiosResponse } from 'axios'
 import {
+  Repository,
   type ListRepository,
   type ItemRepository,
-  Repository,
   type DeleteItemRepository,
   type UpdateItemRepository
 } from './Repository'
@@ -50,13 +50,10 @@ export class FileRepository
   }
 }
 
-export class ConfigurationFileRepository extends FileRepository {
-  constructor() {
-    super(`configs/`)
-  }
+class YamlFileRepository extends FileRepository {
 
   /**
-   * Creates or updates a configuration file in the backend.
+   * Creates or updates a YAML file on the backend.
    * Appends .yaml to the file name if it is not already present.
    *
    * @param path Location of the file in the backend.
@@ -71,23 +68,16 @@ export class ConfigurationFileRepository extends FileRepository {
   }
 }
 
-export class QueryFileRepository extends FileRepository {
+export class ConfigurationFileRepository extends YamlFileRepository {
+  constructor() {
+    super(`configs/`)
+  }
+
+}
+
+export class QueryFileRepository extends YamlFileRepository {
   constructor() {
     super(`queries/`)
   }
 
-  /**
-   * Creates or updates a query file in the backend.
-   * Appends .cql to the file name if it is not already present.
-   *
-   * @param path Location of the file in the backend.
-   * @param content Contents of the file.
-   * @returns Response from the backend.
-   */
-  async update(path: string, content: SaveFileContent): Promise<AxiosResponse<SaveFileContent>> {
-    if (!path.endsWith('.yaml')) {
-      path = path + '.yaml'
-    }
-    return super.update(path, content)
-  }
 }

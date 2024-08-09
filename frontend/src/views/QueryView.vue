@@ -155,8 +155,6 @@ useConfirmLeavePage(confirmLeaveMessage, leavable)
 
 const { items: files, loading: filesIsLoading, fetchItems: getQueryFiles } = useRepositoryList(queriesRepository);
 
-// const { data: files, isLoading: filesIsLoading, execute: getQueryFiles } = useAxios('/queries/', axios)
-
 /**
  * On selection of file in sidebar, load the file and set the content.
  * @param path Path of the file to load.

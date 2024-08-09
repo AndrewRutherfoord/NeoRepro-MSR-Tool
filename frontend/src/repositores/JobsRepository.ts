@@ -1,16 +1,18 @@
 import type { AxiosResponse } from 'axios'
 import {
   Repository,
-  type ListRepository,
   type ItemRepository,
   type DeleteItemRepository,
   type CreateItemRepository,
   type PaginatedListRepository
 } from './Repository'
+import type { Pagination } from './Pagination'
+
+type status = 'failed' | 'pending' | 'complete' | 'started'
 
 export interface JobStatus {
   job_id: number
-  status: statuses
+  status: status[]
   timestamp: string
 }
 
@@ -21,16 +23,11 @@ export interface Job {
   statuses: JobStatus[]
 }
 
-type status = 'failed' | 'pending' | 'complete' | 'started'
-
-export interface Pagination {
-  limit: number
-  offset: number
-}
 
 export type ListOptions = Pagination & {
   statuses?: status[]
 }
+
 /**
  * Repository for managing job configuration files in the backend.
  */
@@ -56,6 +53,10 @@ export class JobsRepository
 
   async create(data: Object): Promise<AxiosResponse<string>> {
     return this.http.post(``, data)
+  }
+
+  async createList(data: any) : Promise<AxiosResponse<Job[]>> {
+    return this.http.post(``, data);
   }
 
   async delete(id: string | number): Promise<AxiosResponse<void>> {

@@ -2,44 +2,23 @@
   <v-app-bar>
     <v-app-bar-title>Drill Config Editor</v-app-bar-title>
     <template v-slot:append>
-      <v-btn
-        class="mx-2"
-        variant="outlined"
-        color="green"
-        @click="checkConfig"
-        prepend-icon="mdi-check"
-        >Check Config</v-btn
-      >
+      <v-btn class="mx-2" variant="outlined" color="green" @click="checkConfig" prepend-icon="mdi-check">Check
+        Config</v-btn>
       <v-btn variant="outlined" @click="executeDrillJob">Execute Drill Job</v-btn>
     </template>
   </v-app-bar>
 
   <vue-splitter initial-percent="20" style="height: 100%">
     <template #left-pane>
-      <file-tree-sidebar
-        title="Saved Configs"
-        subtitle="Click on one to open it and then execute it."
-        @link-clicked="openFile"
-        @delete-file="deleteConfiguration"
-        @create-file="openNewFile"
-        :data="files"
-        :is-loading="filesIsLoading"
-      ></file-tree-sidebar>
+      <file-tree-sidebar title="Saved Configs" subtitle="Click on one to open it and then execute it."
+        @link-clicked="openFile" @delete-file="deleteConfiguration" @create-file="openNewFile" :data="files"
+        :is-loading="filesIsLoading"></file-tree-sidebar>
     </template>
     <template #right-pane>
       <div class="d-flex justify-space-between">
-        <v-breadcrumbs
-          class="py-2"
-          :items="currentFile ? currentFile.split('/') : ['new-file.json']"
-        ></v-breadcrumbs>
-        <v-btn
-          class="mt-1 me-3"
-          size="compact"
-          variant="text"
-          @click="saveConfiguration"
-          icon="mdi-content-save"
-          :disabled="!unsavedChanges"
-        ></v-btn>
+        <v-breadcrumbs class="py-2" :items="currentFile ? currentFile.split('/') : ['new-file.json']"></v-breadcrumbs>
+        <v-btn class="mt-1 me-3" size="compact" variant="text" @click="saveConfiguration" icon="mdi-content-save"
+          :disabled="!unsavedChanges"></v-btn>
       </div>
       <hr />
       <!-- {{ currentFile }} -->
@@ -69,11 +48,13 @@ import VueSplitter from '@rmp135/vue-splitter'
 import initial from '../assets/initial.yaml?raw'
 import schema from '../../../schemas/schema.json?raw'
 import Editor from '../components/Editor.vue'
+import { JobsRepository } from '@/repositores/JobsRepository'
 
 const router = useRouter()
 const route = useRoute()
 
 const configurationsRepository = new ConfigurationFileRepository()
+const jobsRepository = new JobsRepository()
 
 const toast = useToast()
 
@@ -125,8 +106,8 @@ async function executeDrillJob() {
   }
 
   try {
-    let response = axios.post('http://127.0.0.1:8000/jobs/', yaml.load(content.value))
-    toast.success('Jobs have been sent successfully.')
+    let { data } = await jobsRepository.createList(yaml.load(content.value));
+    toast.success(`${data.length} job${data.length > 1 ? 's have' : ' has'} been created successfully. Proceed to the job status page to see the status.`)
   } catch (e) {
     toast.error('Could not create jobs.')
     console.error(e)

@@ -1,10 +1,6 @@
-import type { AxiosResponse } from 'axios'
 import {
   Repository,
   type ListRepository,
-  type ItemRepository,
-  type DeleteItemRepository,
-  type CreateItemRepository
 } from './Repository'
 
 /**
