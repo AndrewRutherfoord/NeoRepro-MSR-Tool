@@ -1,7 +1,7 @@
 # The starting point for the backend Docker container. This should only be called by the Dockerfile.
 # It migrates the database and starts the applcation.
 
-cd /app/backend/backend
+cd /app/backend/src
 
 # Migrate the database with Alembic
 echo "Alembic Migrating Database..."
@@ -12,4 +12,4 @@ cd /app/backend
 
 # Start the backend
 echo "Starting the backend"
-fastapi dev ./backend/main.py
+fastapi dev ./src/main.py
