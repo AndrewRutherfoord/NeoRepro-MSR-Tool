@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch
-from driller.cloner import clone_repository
+from src.cloner import clone_repository
 from git import InvalidGitRepositoryError, GitCommandError
 
 

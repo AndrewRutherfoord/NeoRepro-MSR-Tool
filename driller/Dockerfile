@@ -22,9 +22,7 @@ COPY ./common/ ../common/
 
 RUN poetry install --with test && rm -rf $POETRY_CACHE_DIR
 
-COPY ./driller/driller ./driller
+COPY ./driller/src ./driller
 COPY ./driller/tests ./tests
 
-CMD [ "poetry", "run", "python3", "-m", "driller.main" ]
-# CMD ["poetry", "run", "reloadium","run","./driller/main.py"]  
-
+CMD [ "poetry", "run", "python3", "-m", "src.main" ]

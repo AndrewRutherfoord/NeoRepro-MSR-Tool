@@ -5,9 +5,9 @@ import logging
 import signal
 import sys
 
-from driller.util import get_class
+from src.util import get_class
 
-from driller.settings.default import (
+from src.settings.default import (
     LOG_FORMAT,
     LOG_LEVEL,
     CONFIGS,
@@ -24,7 +24,7 @@ from driller.settings.default import (
     NEO4J_PASSWORD,
     NEO4J_DEFAULT_BATCH_SIZE,
 )
-from driller.workers.queue_worker import QueueWorker, Worker
+from src.workers.queue_worker import QueueWorker, Worker
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format=LOG_FORMAT, level=LOG_LEVEL)

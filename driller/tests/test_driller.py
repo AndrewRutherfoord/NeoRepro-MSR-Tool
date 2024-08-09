@@ -10,10 +10,10 @@ from common.models.driller_config import (
 )
 from pydriller import Commit
 
-from driller.drillers.driller import RepositoryDriller
-from driller.drillers.neo4j_pydriller_repository_storage import RepositoryNeo4jStorage
-from driller.drillers.pydriller_repository_storage import RepositoryDataStorage
-from driller.settings.default import (
+from src.drillers.driller import RepositoryDriller
+from src.drillers.neo4j_pydriller_repository_storage import RepositoryNeo4jStorage
+from src.drillers.pydriller_repository_storage import RepositoryDataStorage
+from src.settings.default import (
     NEO4J_HOST,
     NEO4J_PASSWORD,
     NEO4J_PORT,

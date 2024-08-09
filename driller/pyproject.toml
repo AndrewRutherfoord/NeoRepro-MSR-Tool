@@ -15,23 +15,19 @@ neo4j = "^5.20.0"
 pyyaml = "^6.0.1"
 jsonschema = "^4.22.0"
 
-reloadium = "^1.5.1"
-websockets = "^12.0"
 [tool.poetry.group.test.dependencies]
 pytest = "^8.2.2"
-
 pytest-mock = "^3.14.0"
 coverage = "^7.5.4"
-[tool.poetry.group.dev.dependencies]
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-driller-worker = "driller.main:exec"
-test-client = "driller.test_client:exec"
-test-config-driller = "driller.config_driller:main"
+driller-worker = "src.main:exec"
+test-client = "src.test_client:exec"
+test-config-driller = "src.config_driller:main"
 
 [tool.pytest.ini_options]
 log_cli = true
