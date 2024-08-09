@@ -13,8 +13,8 @@ from aio_pika.abc import (
 )
 
 from sqlmodel import Session
-from backend.database import engine
-from backend.ws_connection_manager import socket_connections
+from src.database import engine
+from src.ws_connection_manager import socket_connections
 from common.models.jobs import Job, JobStatus
 
 logger = logging.getLogger(__name__)

@@ -23,7 +23,7 @@ COPY ./common/ ../common/
 
 RUN poetry install && rm -rf $POETRY_CACHE_DIR
 
-COPY ../backend/backend ./backend
+COPY ../backend/src ./backend
 
 # CMD ["fastapi","dev", "./backend/main.py"]
 ENTRYPOINT ["sh", "./entrypoint.sh" ]

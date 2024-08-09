@@ -16,8 +16,8 @@ from common.models.jobs import (
     JobStatusDetails,
 )
 
-from backend.database import get_session
-from backend.ws_connection_manager import socket_connections
+from src.database import get_session
+from src.ws_connection_manager import socket_connections
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

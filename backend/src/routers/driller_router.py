@@ -20,7 +20,7 @@ from sqlalchemy import case, func
 from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
 
-from backend.database import get_session
+from src.database import get_session
 from common.models.jobs import (
     Job,
     JobCreate,

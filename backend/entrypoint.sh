@@ -12,4 +12,4 @@ cd /app/backend
 
 # Start the backend
 echo "Starting the backend"
-fastapi dev ./backend/main.py
+fastapi dev ./src/main.py

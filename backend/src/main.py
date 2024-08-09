@@ -7,8 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 
-from backend.drill_queue_rpc import RabbitMessageQueueRPC, RepositoryDrillerClient
-from backend.routers import driller_router, files, job_statuses
+from src.drill_queue_rpc import RabbitMessageQueueRPC, RepositoryDrillerClient
+from src.routers import driller_router, files, job_statuses
 
 logger = logging.getLogger(__name__)
 
