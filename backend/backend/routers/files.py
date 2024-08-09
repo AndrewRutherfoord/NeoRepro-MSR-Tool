@@ -47,7 +47,7 @@ def get_file_type(file_type: str):
 def get_file_list(path):
     """Returns a list of files from the base path
     Returns a dict where key is file or folder name. If value null, then file. If folder, then
-    returns value is a dict of same structure.  
+    returns value is a dict of same structure.
     """
     files_structure = {}
 
@@ -56,7 +56,7 @@ def get_file_list(path):
         subdir = files_structure
 
         # If relative path starts with `..` then remove it so pathing isn't too deep on frontend.
-        if (path[0] == '..'):
+        if path[0] == "..":
             path = path[1:]
 
         # Remove base path
@@ -84,7 +84,7 @@ async def get_file(file_type: str, path: str):
         raise HTTPException(status_code=404, detail="File not found")
 
 
-def save_file(path, file_name, content):
+def perform_save_file(path, file_name, content):
     """Saves a file to the specified path.
 
     Args:
@@ -102,10 +102,10 @@ def save_file(path, file_name, content):
     os.makedirs(directory, exist_ok=True)
 
     if os.path.isfile(file_path):
-        logger.info(f"File {file_path} already exists. Overwriting.")
+        logger.debug(f"File {file_path} already exists. Overwriting.")
         created = False
     else:
-        logger.info(f"File {file_path} does not exist. Creating.")
+        logger.debug(f"File {file_path} does not exist. Creating.")
         created = True
 
     with open(file_path, "w") as file:
@@ -116,14 +116,17 @@ def save_file(path, file_name, content):
 @router.post("/files/{file_type:str}/{path:path}")
 async def save_file(file_type: str, path: str, body: SaveBody):
     try:
-        base_path = get_file_type()
-        save_file(base_path, path, body.content)
-        return Response(status_code=201)
+        base_path = get_file_type(file_type)
+        created = perform_save_file(base_path, path, body.content)
+        if created:
+            return Response(status_code=201)
+        else:
+            return Response(status_code=200)
     except FileExistsError as e:
         raise HTTPException(400, "File already exists.")
 
 
-def delete_file(path, file_name):
+def perform_delete_file(path, file_name):
     """Deletes a given file and then deletes any directories it was in that are empty"""
     file_path = os.path.join(path, file_name)
     if os.path.isfile(file_path):
@@ -144,6 +147,7 @@ def delete_file(path, file_name):
 @router.delete("/files/{file_type:str}/{path:path}")
 async def delete_file(file_type: str, path: str):
     try:
-        delete_file(CONFIGS_PATH, path)
+        perform_delete_file(CONFIGS_PATH, path)
+        return Response(204)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
