@@ -73,8 +73,11 @@ app.include_router(driller_router.router)
 app.include_router(files.router)
 app.include_router(job_statuses.router)
 
+# Allow the Vue JS frontend to access the backend. 
+# Default port is 5173 but can be set in environment file.
 origins = [
-    "http://localhost:5173",
+    f"http://localhost:{os.environ.get('FRONTEND_PORT', 5173)}",
+    f"http://127.0.0.1:{os.environ.get('FRONTEND_PORT', 5173)}"
 ]
 
 # Very open CORS. Stricter not necessary since app won't be deployed.
