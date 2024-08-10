@@ -65,6 +65,10 @@ export function useNeo4j() {
     }
   }
 
+  /**
+   * Initiates a backup of the Neo4j database.
+   * @param filename The cypher file's name where the backup should be written
+   */
   const backupDatabase = async (filename: string) => {
     return await runQuery(`CALL apoc.export.cypher.all("${filename}", 
         {format: "cypher-shell",useOptimizations: {type: "UNWIND_BATCH", unwindBatchSize: 20}}) 
@@ -72,23 +76,31 @@ export function useNeo4j() {
         RETURN file, batches, source, format, nodes, relationships, properties, time, rows, batchSize;`)
   }
 
+  /**
+   * Clears the Neo4j database of all data. 
+   */
   const clearDatabase = async () => {
     await runQuery(`MATCH (n) DETACH DELETE n`)
-    console.log("1")
     await runQuery(`CALL apoc.schema.assert({},{},true) YIELD label, key RETURN *`)
-    console.log("2")
   }
 
+  /**
+   * Restores a backup from the cypher file. The file needs to site in the neo4j_import folder in
+   * the volumes of the Neo4j container.
+   * 
+   * @param filename Filename from which to lead the backup.
+   */
   const restoreDatabaseBackup = async (filename:string) => {
-    console.log(3)
     return await runQuery(`CALL apoc.cypher.runFile("${filename}")`)
   }
 
   onMounted(() => {
+    // On mount initiates a connection to the Neo4j db.
     initialize()
   })
 
   onBeforeUnmount(() => {
+    // Disconnects from Neo4j db before unloading component.
     close()
   })
 

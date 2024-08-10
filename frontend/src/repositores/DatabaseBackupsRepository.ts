@@ -8,7 +8,7 @@ import {
  */
 export class DatabaseBackupsRepository extends Repository implements ListRepository<Object> {
   constructor() {
-    super('db-exports/')
+    super('files/db-exports/')
   }
 
   async getAll() {

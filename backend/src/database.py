@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 # then consult backend README about how to migrate.
 
 sqlite_file_name = "database.sqlite"
-sqlite_url = f"sqlite:///backend/{sqlite_file_name}"
+sqlite_url = f"sqlite:///src/{sqlite_file_name}"
 
 connect_args = {"check_same_thread": False}
 engine = create_engine(sqlite_url, echo=True, connect_args=connect_args)

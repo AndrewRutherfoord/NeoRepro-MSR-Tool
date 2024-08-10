@@ -4,8 +4,8 @@ import logging
 from pydriller import Commit
 from pydriller.domain.commit import Developer, ModifiedFile
 
-from driller.drillers.neo4j_storage import Neo4jStorage
-from driller.drillers.pydriller_repository_storage import RepositoryDataStorage
+from src.drillers.neo4j_storage import Neo4jStorage
+from src.drillers.pydriller_repository_storage import RepositoryDataStorage
 
 logger = logging.getLogger(__name__)
 

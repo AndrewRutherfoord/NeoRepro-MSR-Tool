@@ -32,10 +32,12 @@ LOG_LEVEL = logging.getLevelName(LOG_LEVEL)
 
 REPO_CLONE_LOCATION = os.environ.get("REPO_CLONE_LOCATION", "/tmp/repos")
 
+# To replace the storage class, driller class or worker class that is used, replace the following
+# strings with the location of the replacement class. This allows you to add custom functionality
 DEFAULT_CONFIGS = {
-    "REPOSITORY_STORAGE_CLASS": "driller.drillers.neo4j_pydriller_repository_storage.RepositoryNeo4jStorage",
-    "REPOSITORY_DRILLER_CLASS": "driller.drillers.driller.RepositoryDriller",
-    "WORKER_CLASS": "driller.workers.queue_driller_worker.QueueRepositoryNeo4jDrillerWorker",
+    "REPOSITORY_STORAGE_CLASS": "src.drillers.neo4j_pydriller_repository_storage.RepositoryNeo4jStorage",
+    "REPOSITORY_DRILLER_CLASS": "src.drillers.driller.RepositoryDriller",
+    "WORKER_CLASS": "src.workers.queue_driller_worker.QueueRepositoryNeo4jDrillerWorker",
 }
 
 CONFIGS = {**DEFAULT_CONFIGS}

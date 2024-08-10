@@ -57,6 +57,7 @@ import { useNeo4j } from '@/composables/useNeo4j'
 import { useToast } from '@/composables/useToast'
 import Neo4jDatabaseOverview from '@/components/Neo4jDatabaseOverview.vue'
 import useConfirmLeavePage from '@/composables/useConfirmLeavePage'
+
 const repository = new DatabaseBackupsRepository()
 
 const toast = useToast()
@@ -76,7 +77,8 @@ const files = computed(() => {
   if (items.value === null || items.value == undefined) {
     return null
   }
-  return (items.value)['neo4j_import']
+  return items.value
+  // return (items.value)['neo4j_import']
 })
 
 const overviewCard = ref()

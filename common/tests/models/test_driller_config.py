@@ -1,6 +1,6 @@
 from datetime import datetime
 import json
-from common.models.driller_config import (
+from src.models.driller_config import (
     DrillConfig,
     Filter,
     FilterMethod,

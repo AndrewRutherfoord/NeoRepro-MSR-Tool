@@ -7,7 +7,7 @@ from common.models.driller_config import (
     FiltersConfig,
 )
 from pydriller.domain.commit import ModifiedFile
-from driller.drillers.pydriller_repository_storage import RepositoryDataStorage
+from src.drillers.pydriller_repository_storage import RepositoryDataStorage
 
 logger = logging.getLogger(__name__)
 

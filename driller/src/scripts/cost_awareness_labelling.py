@@ -4,7 +4,7 @@ import sys
 from typing import Optional
 
 from pydantic import BaseModel
-from driller.drillers.neo4j_storage import Neo4jStorage
+from src.drillers.neo4j_storage import Neo4jStorage
 
 """ For case study of reproducing data from `Cloud Cost Awareness` study.
 Replication package that this replication is based on: https://github.com/feitosa-daniel/cloud-cost-awareness

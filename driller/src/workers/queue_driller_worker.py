@@ -4,11 +4,11 @@ import logging
 import aio_pika
 from pydantic import ValidationError
 
-from driller.cloner import clone_repository, remove_repository_clone
+from src.cloner import clone_repository, remove_repository_clone
 
-from driller.drillers.driller import RepositoryDriller
+from src.drillers.driller import RepositoryDriller
 
-from driller.settings.default import (
+from src.settings.default import (
     REPO_CLONE_LOCATION,
 )
 from .queue_worker import QueueWorker
